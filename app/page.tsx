@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   XAxis,
   YAxis,
@@ -9,1006 +9,1765 @@ import {
   Area,
 } from "recharts";
 
+// ─── Google Fonts ───────────────────────────────────────────────────────────
+const FontLink = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #06060a;
+      --surface: #0e0e14;
+      --card:    rgba(255,255,255,0.035);
+      --border:  rgba(255,255,255,0.08);
+      --orange:  #ff5c1a;
+      --amber:   #ffb347;
+      --white:   #f5f3ee;
+      --muted:   rgba(245,243,238,0.45);
+      --mono:    'DM Mono', monospace;
+      --sans:    'Syne', sans-serif;
+      --serif:   'Instrument Serif', serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Animations ─────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes smokeFloat {
+      0%,100% { transform: translateY(0) scale(1);   opacity: .07; }
+      50%      { transform: translateY(-40px) scale(1.08); opacity: .12; }
+    }
+    @keyframes gridPulse {
+      0%,100% { opacity: .4; }
+      50%      { opacity: .7; }
+    }
+    @keyframes orb1 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(60px,-40px) scale(1.1); }
+      66%      { transform: translate(-30px,50px) scale(.95); }
+    }
+    @keyframes orb2 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(-70px,60px) scale(1.05); }
+      66%      { transform: translate(50px,-30px) scale(.9); }
+    }
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes pulseDot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,92,26,.5); }
+      50%      { box-shadow: 0 0 0 8px rgba(255,92,26,0); }
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    @keyframes radioactive {
+      0%,100% { opacity:1; } 50% { opacity:.4; }
+    }
+    @keyframes slideIn {
+      from { opacity:0; transform:scale(.96) translateY(16px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+
+    .fade-up { animation: fadeUp .7s ease both; }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+    .delay-4 { animation-delay: .4s; }
+    .delay-5 { animation-delay: .5s; }
+    .delay-6 { animation-delay: .6s; }
+    .delay-8 { animation-delay: .8s; }
+    .delay-10{ animation-delay:1.0s; }
+
+    /* ── Layout ─────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Glass card ─────────────────────────── */
+    .glass {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+    }
+
+    /* ── Badge ──────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,92,26,.12);
+      border: 1px solid rgba(255,92,26,.3);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 11px; font-weight: 600; letter-spacing: .12em;
+      color: var(--orange); text-transform: uppercase;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange);
+      animation: pulseDot 2s infinite;
+    }
+
+    /* ── Inputs ─────────────────────────────── */
+    .inp {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--white); font-family: var(--mono); font-size: 14px;
+      outline: none; transition: border-color .2s, background .2s;
+    }
+    .inp:focus { border-color: var(--orange); background: rgba(255,92,26,.06); }
+    .inp-label {
+      display: block; font-size: 11px; font-weight: 500;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    /* ── Stat card ──────────────────────────── */
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      position: relative; overflow: hidden;
+      transition: border-color .3s, transform .3s;
+      cursor: default;
+    }
+    .stat-card:hover { border-color: rgba(255,92,26,.35); transform: translateY(-3px); }
+    .stat-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(60% 60% at 50% 0%, rgba(255,92,26,.08) 0%, transparent 100%);
+      opacity: 0; transition: opacity .3s;
+    }
+    .stat-card:hover::before { opacity: 1; }
+
+    /* ── Chemical table ─────────────────────── */
+    .chem-row { transition: background .2s; }
+    .chem-row:hover { background: rgba(255,255,255,.03); }
+
+    /* ── Ticker ─────────────────────────────── */
+    .ticker-wrap {
+      overflow: hidden; white-space: nowrap;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+    .ticker-inner {
+      display: inline-block;
+      animation: ticker 28s linear infinite;
+    }
+
+    /* ── Locale toggle ──────────────────────── */
+    .locale-btn {
+      padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      border: 1px solid transparent; cursor: pointer; transition: all .2s;
+      font-family: var(--sans);
+    }
+
+    /* ── Hero range ─────────────────────────── */
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      border-radius: 4px; outline: none; cursor: pointer;
+      background: rgba(255,255,255,.1);
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--orange);
+      border: 3px solid var(--black);
+      box-shadow: 0 0 0 2px var(--orange);
+    }
+
+    /* ── Modal ──────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .modal-box {
+      background: #13131a;
+      border: 1px solid rgba(255,92,26,.3);
+      border-radius: 24px; padding: 36px;
+      max-width: 480px; width: 100%;
+      animation: slideIn .3s ease;
+      position: relative;
+    }
+
+    /* ── Scrollbar ──────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,92,26,.4); border-radius: 3px; }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 768px) {
+      .hero-title { font-size: clamp(36px, 10vw, 80px) !important; }
+      .grid-3 { grid-template-columns: 1fr !important; }
+      .grid-2 { grid-template-columns: 1fr !important; }
+    }
+  `}</style>
+);
+
+// ─── Chemical details data ────────────────────────────────────────────────────
+type ChemicalName = keyof typeof CHEMICALS_RAW;
+type ChemicalData = {
+  use: string;
+  toxicity: string;
+  level: 1 | 2 | 3 | 4 | 5;
+  healthEffects: string;
+  source: string;
+  sourceUrl: string;
+  prevention: string;
+};
+
+const CHEMICALS_RAW = {
+  Formaldehyde: {
+    use: "Embalming fluid",
+    toxicity: "Carcinogen",
+    level: 2,
+    healthEffects: "Eye, nose, and throat irritation; increased cancer risk.",
+    source: "CDC",
+    sourceUrl: "https://www.cdc.gov/formaldehyde/",
+    prevention: "Avoid exposure, ventilate spaces, use air purifiers.",
+  },
+  Benzene: {
+    use: "Gasoline additive",
+    toxicity: "High",
+    level: 3,
+    healthEffects: "Blood disorders, leukemia, immune system damage.",
+    source: "CDC/NIOSH",
+    sourceUrl: "https://www.cdc.gov/niosh/topics/benzene/",
+    prevention: "Avoid smoke, use protective equipment in workplaces.",
+  },
+  Arsenic: {
+    use: "Rat poison",
+    toxicity: "Lethal",
+    level: 4,
+    healthEffects: "Skin lesions, cancer, cardiovascular disease.",
+    source: "WHO",
+    sourceUrl: "https://www.who.int/news-room/fact-sheets/detail/arsenic",
+    prevention: "Avoid contaminated sources, ensure clean water.",
+  },
+  Ammonia: {
+    use: "Toilet cleaner",
+    toxicity: "Irritant",
+    level: 1,
+    healthEffects: "Respiratory irritation, coughing, asthma aggravation.",
+    source: "CDC/NIOSH",
+    sourceUrl: "https://www.cdc.gov/niosh/topics/ammonia/",
+    prevention: "Ventilate, avoid mixing with bleach, minimize exposure.",
+  },
+  "Polonium-210": {
+    use: "Radioactive element",
+    toxicity: "Radioactive",
+    level: 5,
+    healthEffects: "Radiation poisoning, lung cancer risk.",
+    source: "American Cancer Society",
+    sourceUrl:
+      "https://www.cancer.org/cancer/risk-prevention/tobacco/secondhand-smoke.html",
+    prevention: "Avoid tobacco smoke, support smoke-free policies.",
+  },
+} as const;
+
+const CHEMICALS: Record<ChemicalName, ChemicalData> = CHEMICALS_RAW;
+
+const TOXICITY_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
+  1: "#94a3b8",
+  2: "#f59e0b",
+  3: "#f97316",
+  4: "#ef4444",
+  5: "#ff2d55",
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function SmokeTracker() {
   const [locale, setLocale] = useState("US");
+  const [years, setYears] = useState(25);
+  const [cigsPerDay, setCigsPerDay] = useState(1.5);
+  const [smokers, setSmokers] = useState(1);
+  const [envSize, setEnvSize] = useState(1000);
+  const [roomClean, setRoomClean] = useState(true);
+  const [stats, setStats] = useState({ totalCigs: 0, chemicals: 0, money: 0 });
+  const [selectedChem, setSelectedChem] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const heroRef = useRef(null);
+
   const costPerCig = locale === "US" ? 0.5 : 120;
 
-  const t = {
-    US: {
-      calculatorTitle: "Personalized Secondhand Smoke Risk Calculator",
-      dataCalculation: "Data & Calculation:",
-      cigsPerDay: "Estimated Cigarettes/Day",
-      householdSmokers: "Household Smokers",
-      envSize: "Home/Environment Size (sq ft)",
-      roomClean: "Is your room smoke-free?",
-      totalCigs: "Total Passive Cigarettes",
-      chemicalExposure: "Estimated Chemical Exposure",
-      moneyWasted: "Money Wasted (USD)",
-      basedOn: "Based on household average",
-      howMany: "How many people smoke in your household?",
-      largerSpaces: "Larger spaces dilute smoke exposure",
-      smokeFree: "Smoke-free rooms reduce exposure",
-      quiz: "Take the Quiz",
-      yearsExposed: "Years Exposed",
-      adjustYears:
-        "Adjust the years exposed to see your personalized risk. More input options coming soon.",
-      costTooltip:
-        "Based on U.S. average cost per cigarette. Not affected by environment size.",
-      downloadInfographic: "Download Infographic (Coming Soon)",
-    },
-    HU: {
-      calculatorTitle:
-        "Személyre szabott passzív dohányzás kockázat kalkulátor",
-      dataCalculation: "Adatok & Számítás:",
-      cigsPerDay: "Becsült cigaretták/nap",
-      householdSmokers: "Dohányzó háztartásban",
-      envSize: "Lakás/Élettér mérete (m²)",
-      roomClean: "A szobád füstmentes?",
-      totalCigs: "Összes passzív cigaretta",
-      chemicalExposure: "Becsült vegyi anyag terhelés",
-      moneyWasted: "Elpazarolt pénz (HUF)",
-      basedOn: "Háztartási átlag alapján",
-      howMany: "Hányan dohányoznak a háztartásban?",
-      largerSpaces: "Nagyobb terek csökkentik a füst koncentrációját",
-      smokeFree: "A füstmentes szobák csökkentik a kockázatot",
-      quiz: "Töltsd ki a kvízt",
-      yearsExposed: "Kitettség évei",
-      adjustYears:
-        "Állítsd be a kitettség éveit a személyre szabott kockázatért. További beállítások hamarosan.",
-      costTooltip:
-        "Magyarországi átlagos cigaretta ár alapján. Nem függ a környezet méretétől.",
-      downloadInfographic: "Infografika letöltése (Hamarosan)",
-    },
-  } as const;
-
-  const [modalOpen, setModalOpen] = useState(false);
-
-  type ChemicalKey = keyof typeof chemicalDetails;
-  const chemicalDetails = {
-    Formaldehyde: {
-      healthEffects: "Eye, nose, and throat irritation; increased cancer risk.",
-      source: "CDC: https://www.cdc.gov/formaldehyde/",
-      prevention: "Avoid exposure, ventilate spaces, use air purifiers.",
-    },
-    Benzene: {
-      healthEffects: "Blood disorders, leukemia, immune system damage.",
-      source: "CDC/NIOSH: https://www.cdc.gov/niosh/topics/benzene/",
-      prevention: "Avoid smoke, use protective equipment in workplaces.",
-    },
-    Arsenic: {
-      healthEffects: "Skin lesions, cancer, cardiovascular disease.",
-      source: "WHO: https://www.who.int/news-room/fact-sheets/detail/arsenic",
-      prevention: "Avoid contaminated sources, ensure clean water.",
-    },
-    Ammonia: {
-      healthEffects: "Respiratory irritation, coughing, asthma aggravation.",
-      source: "CDC/NIOSH: https://www.cdc.gov/niosh/topics/ammonia/",
-      prevention: "Ventilate, avoid mixing with bleach, minimize exposure.",
-    },
-    "Polonium-210": {
-      healthEffects: "Radiation poisoning, cancer risk.",
-      source:
-        "American Cancer Society: https://www.cancer.org/cancer/risk-prevention/tobacco/secondhand-smoke.html",
-      prevention: "Avoid tobacco smoke, support smoke-free policies.",
-    },
-  };
-
-  const [selectedChemical, setSelectedChemical] = useState<ChemicalKey | null>(
-    null,
-  );
-
-  const YEARS_EXPOSED = 25;
-  const DEFAULT_CIGS_PER_DAY_PASSIVE = 1.5;
-  const DEFAULT_HOUSEHOLD_SMOKERS = 1;
-  const DEFAULT_ENV_SIZE = 1000;
-  const DEFAULT_ROOM_CLEAN = true;
-
-  const [years, setYears] = useState(YEARS_EXPOSED);
-  const [cigsPerDayPassive, setCigsPerDayPassive] = useState(
-    DEFAULT_CIGS_PER_DAY_PASSIVE,
-  );
-  const [householdSmokers, setHouseholdSmokers] = useState(
-    DEFAULT_HOUSEHOLD_SMOKERS,
-  );
-  const [envSize, setEnvSize] = useState(DEFAULT_ENV_SIZE);
-  const [roomClean, setRoomClean] = useState(DEFAULT_ROOM_CLEAN);
-  const [stats, setStats] = useState({
-    totalCigs: 0,
-    lungsImpact: 0,
-    moneyWasted: 0,
-  });
+  const isHU = locale === "HU";
+  const currencySymbol = isHU ? "" : "$";
+  const currencySuffix = isHU ? " Ft" : "";
 
   useEffect(() => {
-    let exposureFactor = 1;
-    if (!roomClean) exposureFactor += 0.5;
-    exposureFactor += (householdSmokers - 1) * 0.7;
-    exposureFactor *= Math.max(0.5, 1000 / envSize);
-    const total = years * 365 * cigsPerDayPassive * exposureFactor;
-    const baselineCigs = years * 365 * cigsPerDayPassive;
+    let ef = 1;
+    if (!roomClean) ef += 0.5;
+    ef += (smokers - 1) * 0.7;
+    ef *= Math.max(0.5, 1000 / envSize);
+    const total = years * 365 * cigsPerDay * ef;
+    const baseline = years * 365 * cigsPerDay;
     setStats({
-      totalCigs: total,
-      lungsImpact: total * 7000,
-      moneyWasted: baselineCigs * costPerCig,
+      totalCigs: Math.round(total),
+      chemicals: Math.round(total * 7000),
+      money: Math.round(baseline * costPerCig),
     });
-  }, [
-    years,
-    cigsPerDayPassive,
-    householdSmokers,
-    envSize,
-    roomClean,
-    costPerCig,
-  ]);
+  }, [years, cigsPerDay, smokers, envSize, roomClean, costPerCig]);
 
-  const data = Array.from({ length: years }, (_, i) => ({
+  const chartData = Array.from({ length: years }, (_, i) => ({
     year: i + 1,
-    cigs: Math.round((i + 1) * 365 * cigsPerDayPassive),
+    cigs: Math.round((i + 1) * 365 * cigsPerDay),
   }));
 
-  const currentT = t[locale as keyof typeof t];
+  const openModal = (chem: string) => {
+    setSelectedChem(chem);
+    setModalOpen(true);
+  };
+
+  const t = {
+    hero1: "The Invisible",
+    hero2: "Inhale",
+    heroSub: isHU
+      ? "Minden légvételeddel vegyi anyagok ezreit szívod be. Vizualizáljuk a passzív dohányzás valódi hatásait."
+      : "With every breath, thousands of chemicals enter your lungs uninvited. We visualize the true cost of secondhand smoke.",
+    cta: isHU ? "Töltsd ki a kvízt" : "Take the Assessment",
+    calcTitle: isHU ? "Kockázat Kalkulátor" : "Risk Calculator",
+    yearsLabel: isHU ? "Kitettség évei" : "Years Exposed",
+    cigsLabel: isHU ? "Cigaretta/nap (passzív)" : "Cigarettes/Day (passive)",
+    smokersLabel: isHU ? "Dohányzók a háztartásban" : "Household Smokers",
+    sizeLabel: isHU ? "Lakás mérete (m²/ft²)" : "Home Size (sq ft)",
+    roomLabel: isHU ? "Füstmentes szoba?" : "Smoke-free Room?",
+    stat1: isHU ? "Összes passzív cigaretta" : "Passive Cigarettes",
+    stat2: isHU ? "Vegyi anyag terhelés" : "Chemical Exposure",
+    stat3: isHU ? "Elpazarolt pénz" : "Money Wasted",
+    chartTitle: isHU ? "Kumulatív Kitettség" : "Cumulative Exposure Over Time",
+    chemTitle: isHU ? "A Kémiai Rakománya" : "The Chemical Payload",
+    chemSub: isHU
+      ? "Oldalsugár füstben (magasabb koncentráció)"
+      : "Found in sidestream smoke at higher concentrations",
+    faqTitle: isHU ? "GYIK" : "FAQ",
+    actionTitle: isHU ? "Tegyél Lépéseket" : "Take Action",
+    disclaimer: isHU
+      ? "Ez az eszköz oktatási célokat szolgál. Személyre szabott értékeléshez fordulj orvoshoz."
+      : "This tool is for educational purposes. Consult a medical professional for personalized health assessment.",
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-orange-950 text-zinc-100 p-8 font-sans relative overflow-hidden">
-      {/* Smoke background effect */}
+    <>
+      <FontLink />
+
       <div
-        aria-hidden="true"
-        className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 60%)," +
-            "radial-gradient(circle at 70% 10%, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 70%)," +
-            "radial-gradient(circle at 60% 80%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%)",
-          maskImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 100%)",
+          background: "var(--black)",
+          minHeight: "100vh",
+          fontFamily: "var(--sans)",
+          overflow: "hidden",
         }}
-      />
-
-      {/* Locale Switcher */}
-      <div className="relative z-10 max-w-4xl mx-auto flex justify-end mb-4">
-        <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded px-3 py-2">
-          <span className="text-xs text-zinc-400">🌎</span>
-          <button
-            className={`font-bold text-sm px-2 py-1 rounded ${locale === "US" ? "bg-orange-500 text-white" : "bg-zinc-800 text-zinc-300"}`}
-            onClick={() => setLocale("US")}
-            aria-label="Switch to US"
-          >
-            US
-          </button>
-          <button
-            className={`font-bold text-sm px-2 py-1 rounded ${locale === "HU" ? "bg-orange-500 text-white" : "bg-zinc-800 text-zinc-300"}`}
-            onClick={() => setLocale("HU")}
-            aria-label="Switch to Hungary"
-          >
-            HU
-          </button>
-        </div>
-      </div>
-
-      <header className="relative z-10 max-w-4xl mx-auto mb-12 flex flex-col items-center gap-8">
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-orange-500 uppercase drop-shadow-lg">
-          <span role="img" aria-label="smoke" className="mr-2">
-            🚬
-          </span>
-          {"The Invisible Inhale"}
-        </h1>
-        <p className="text-zinc-300 mt-4 text-xl md:text-2xl font-light">
-          {locale === "HU"
-            ? "A passzív dohányzás rejtett veszélyeinek feltárása."
-            : "Unmasking the hidden dangers of second-hand smoke."}
-        </p>
-        <p className="text-orange-200 mt-2 text-lg font-medium">
-          {locale === "HU" ? "Vizualizálva több mint " : "Visualizing "}
-          <span className="font-bold">
-            25+ {locale === "HU" ? "év" : "years"}
-          </span>
-          {locale === "HU"
-            ? " kitettség, egészségügyi kockázatok és megelőzés."
-            : " of exposure, health risks, and prevention."}
-        </p>
-        <a
-          href="/quiz"
-          className="inline-flex items-center mt-8 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded shadow-lg transition text-lg"
+      >
+        {/* ── NAV ─────────────────────────────────────────────────── */}
+        <nav
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: "rgba(6,6,10,.8)",
+            backdropFilter: "blur(20px)",
+            borderBottom: "1px solid var(--border)",
+            padding: "0 24px",
+          }}
         >
-          {currentT.quiz}
-        </a>
-      </header>
-
-      <main className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Interactive Risk Calculator */}
-        <section className="md:col-span-3 mb-8 bg-zinc-900 rounded-xl border border-zinc-800 p-6 shadow-lg">
-          <h2 className="text-lg font-bold text-orange-500 mb-2">
-            {currentT.calculatorTitle}
-          </h2>
-          <div className="mb-4 text-xs text-zinc-400 bg-black/20 rounded p-3">
-            <strong>{currentT.dataCalculation}</strong>{" "}
-            {locale === "US" ? (
-              <>
-                This calculator uses{" "}
-                <span className="text-orange-400 font-semibold">
-                  1.5 cigarettes/day
-                </span>{" "}
-                as a passive exposure estimate, based on the{" "}
-                <a
-                  className="underline text-blue-400"
-                  href="https://www.hhs.gov/sites/default/files/secondhand-smoke-consumer.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  2006 U.S. Surgeon General Report
-                </a>{" "}
-                and{" "}
-                <a
-                  className="underline text-blue-400"
-                  href="https://www.ncbi.nlm.nih.gov/books/NBK316407/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  IARC Monograph Vol. 83
-                </a>
-                . Each cigarette contains over{" "}
-                <span className="text-yellow-400 font-semibold">
-                  7,000 chemicals
-                </span>
-                . Cost is estimated at{" "}
-                <span className="text-green-400 font-semibold">
-                  $0.50 per cigarette
-                </span>{" "}
-                (U.S. average). Adjust the years to see your personalized risk.
-              </>
-            ) : (
-              <>
-                Ez a kalkulátor{" "}
-                <span className="text-orange-400 font-semibold">
-                  1,5 cigarettát/nap
-                </span>{" "}
-                használ passzív kitettség becslésére, a{" "}
-                <a
-                  className="underline text-blue-400"
-                  href="https://www.hhs.gov/sites/default/files/secondhand-smoke-consumer.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  2006-os U.S. Surgeon General Report
-                </a>{" "}
-                és{" "}
-                <a
-                  className="underline text-blue-400"
-                  href="https://www.ncbi.nlm.nih.gov/books/NBK316407/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  IARC Monograph Vol. 83
-                </a>{" "}
-                alapján. Egy cigaretta több mint{" "}
-                <span className="text-yellow-400 font-semibold">
-                  7 000 vegyi anyagot
-                </span>{" "}
-                tartalmaz. Az ár{" "}
-                <span className="text-green-400 font-semibold">
-                  60 Ft/cigaretta
-                </span>{" "}
-                (magyar átlag). Állítsd be a kitettség éveit a személyre szabott
-                kockázatért.
-              </>
-            )}
-          </div>
-
-          <form className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label
-                htmlFor="yearsExposed"
-                className="block text-xs text-zinc-400 mb-1"
-              >
-                {currentT.yearsExposed}
-              </label>
-              <input
-                id="yearsExposed"
-                type="number"
-                min="1"
-                max="50"
-                value={years}
-                onChange={(e) => setYears(Number(e.target.value))}
-                className="w-full p-2 rounded border border-zinc-800 bg-zinc-950 text-zinc-100"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="cigsPerDay"
-                className="block text-xs text-zinc-400 mb-1"
-              >
-                {currentT.cigsPerDay}
-              </label>
-              <input
-                id="cigsPerDay"
-                type="number"
-                min="0.1"
-                max="10"
-                step="0.1"
-                value={cigsPerDayPassive}
-                onChange={(e) => setCigsPerDayPassive(Number(e.target.value))}
-                className="w-full p-2 rounded border border-zinc-800 bg-zinc-950 text-zinc-100"
-              />
-              <span className="text-xs text-zinc-500">
-                ({currentT.basedOn})
-              </span>
-            </div>
-            <div>
-              <label
-                htmlFor="householdSmokers"
-                className="block text-xs text-zinc-400 mb-1"
-              >
-                {currentT.householdSmokers}
-              </label>
-              <input
-                id="householdSmokers"
-                type="number"
-                min="1"
-                max="10"
-                value={householdSmokers}
-                onChange={(e) => setHouseholdSmokers(Number(e.target.value))}
-                className="w-full p-2 rounded border border-zinc-800 bg-zinc-950 text-zinc-100"
-                placeholder="e.g. 2"
-              />
-              <span className="text-xs text-zinc-500">
-                ({currentT.howMany})
-              </span>
-            </div>
-            <div>
-              <label
-                htmlFor="envSize"
-                className="block text-xs text-zinc-400 mb-1"
-              >
-                {currentT.envSize}
-              </label>
-              <input
-                id="envSize"
-                type="number"
-                min="100"
-                max="5000"
-                value={envSize}
-                onChange={(e) => setEnvSize(Number(e.target.value))}
-                className="w-full p-2 rounded border border-zinc-800 bg-zinc-950 text-zinc-100"
-                placeholder={locale === "US" ? "e.g. 1200" : "pl. 60"}
-              />
-              <span className="text-xs text-zinc-500">
-                ({currentT.largerSpaces})
-              </span>
-            </div>
-            <div>
-              <label
-                htmlFor="roomClean"
-                className="block text-xs text-zinc-400 mb-1"
-              >
-                {currentT.roomClean}
-              </label>
-              <select
-                id="roomClean"
-                value={roomClean ? "yes" : "no"}
-                onChange={(e) => setRoomClean(e.target.value === "yes")}
-                className="w-full p-2 rounded border border-zinc-800 bg-zinc-950 text-zinc-100"
-              >
-                <option value="yes">{locale === "US" ? "Yes" : "Igen"}</option>
-                <option value="no">{locale === "US" ? "No" : "Nem"}</option>
-              </select>
-              <span className="text-xs text-zinc-500">
-                ({currentT.smokeFree})
-              </span>
-            </div>
-          </form>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="bg-black/30 rounded p-4 border border-zinc-800 group relative">
-              <h3 className="text-xs text-zinc-400 mb-2">
-                {currentT.totalCigs}
-              </h3>
-              <p className="text-2xl font-bold text-orange-500">
-                {stats.totalCigs.toLocaleString()}
-              </p>
-              <span className="absolute left-1/2 -translate-x-1/2 top-0 mt-8 z-20 hidden group-hover:block bg-zinc-800 text-xs text-zinc-200 rounded px-3 py-2 shadow-lg border border-zinc-700 w-64">
-                Calculated as: <br />
-                <span className="font-mono">
-                  years × 365 × cigarettes/day × exposure factor
-                </span>
-                <br />
-                Exposure factor considers household smokers, environment size,
-                and room smoke-free status.
-              </span>
-            </div>
-            <div className="bg-black/30 rounded p-4 border border-zinc-800 group relative">
-              <h3 className="text-xs text-zinc-400 mb-2">
-                {currentT.chemicalExposure}
-              </h3>
-              <p className="text-2xl font-bold text-yellow-500">
-                {stats.lungsImpact.toLocaleString()}
-              </p>
-              <span className="absolute left-1/2 -translate-x-1/2 top-0 mt-8 z-20 hidden group-hover:block bg-zinc-800 text-xs text-zinc-200 rounded px-3 py-2 shadow-lg border border-zinc-700 w-64">
-                Calculated as: <br />
-                <span className="font-mono">
-                  Total Passive Cigarettes × 7,000
-                </span>
-                <br />
-                Each cigarette contains over 7,000 chemicals.
-              </span>
-            </div>
-            <div className="bg-black/30 rounded p-4 border border-zinc-800 group relative">
-              <h3 className="text-xs text-zinc-400 mb-2">
-                {currentT.moneyWasted}
-              </h3>
-              <p className="text-2xl font-bold text-green-400">
-                {locale === "US" ? "$" : ""}
-                {stats.moneyWasted.toLocaleString()}
-                {locale === "HU" ? " Ft" : ""}
-              </p>
-              <span className="absolute left-1/2 -translate-x-1/2 top-0 mt-8 z-20 hidden group-hover:block bg-zinc-800 text-xs text-zinc-200 rounded px-3 py-2 shadow-lg border border-zinc-700 w-64">
-                {currentT.costTooltip}
-              </span>
-            </div>
-          </div>
-
-          <p className="mt-4 text-xs text-zinc-500">{currentT.adjustYears}</p>
-        </section>
-
-        {/* Duration Slider */}
-        <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 shadow-xl">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-4">
-            {locale === "HU" ? "Időtartam" : "Duration"}
-          </h2>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            value={years}
-            onChange={(e) => setYears(Number(e.target.value))}
-            className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-          />
-          <p className="text-3xl font-bold mt-4">
-            {years}{" "}
-            <span className="text-sm font-normal text-zinc-500">Years</span>
-          </p>
-        </div>
-
-        {/* Big Stat 1 */}
-        <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-2">
-            {locale === "HU" ? "Passzív cigaretták" : "Passive Cigarettes"}
-          </h2>
-          <p className="text-4xl font-black text-orange-600 tracking-tight">
-            {stats.totalCigs.toLocaleString()}
-          </p>
-          <p className="text-xs text-zinc-500 mt-2">
-            Total inhaled involuntarily.
-          </p>
-        </div>
-
-        {/* Big Stat 2 */}
-        <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-2">
-            {locale === "HU" ? "Toxin terhelés" : "Toxin Exposure"}
-          </h2>
-          <p className="text-4xl font-black text-yellow-600 tracking-tight">
-            7,000+
-          </p>
-          <p className="text-xs text-zinc-500 mt-2">
-            Chemicals processed by your lungs.
-          </p>
-        </div>
-
-        {/* Chart Section */}
-        <div className="md:col-span-3 bg-zinc-900 p-8 rounded-xl border border-zinc-800 h-80">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-6">
-            {locale === "HU"
-              ? "Összesített belégzés az idő során"
-              : "Cumulative Inhalation Over Time"}
-          </h2>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorCig" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ea580c" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ea580c" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="year"
-                stroke="#52525b"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#52525b"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#18181b",
-                  border: "1px solid #3f3f46",
-                  borderRadius: "8px",
+          <div
+            className="container"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              height: 64,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  background: "linear-gradient(135deg, var(--orange), #ff9f50)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
                 }}
-                itemStyle={{ color: "#ea580c" }}
-              />
-              <Area
-                type="monotone"
-                dataKey="cigs"
-                stroke="#ea580c"
-                fillOpacity={1}
-                fill="url(#colorCig)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Toxin Table Section */}
-        <div className="md:col-span-3 mt-8 bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
-          <div className="p-6 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-zinc-500 uppercase">
-              The Chemical Payload
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1 font-mono">
-              Found in sidestream smoke (higher concentrations than inhaled
-              smoke)
-            </p>
-          </div>
-          <table className="w-full text-left text-sm font-mono">
-            <thead>
-              <tr className="bg-zinc-800/50 text-zinc-400">
-                <th className="p-4">Chemical</th>
-                <th className="p-4">Common Use</th>
-                <th className="p-4 text-orange-500 text-right">Toxicity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {(
-                [
-                  "Formaldehyde",
-                  "Benzene",
-                  "Arsenic",
-                  "Ammonia",
-                  "Polonium-210",
-                ] as ChemicalKey[]
-              ).map((chem) => {
-                const uses: Record<ChemicalKey, string> = {
-                  Formaldehyde: "Embalming fluid",
-                  Benzene: "Gasoline additive",
-                  Arsenic: "Rat poison",
-                  Ammonia: "Toilet cleaner",
-                  "Polonium-210": "Radioactive element",
-                };
-                const toxicity: Record<
-                  ChemicalKey,
-                  { label: string; className: string }
-                > = {
-                  Formaldehyde: { label: "Carcinogen", className: "" },
-                  Benzene: { label: "High", className: "text-orange-400" },
-                  Arsenic: { label: "Lethal", className: "text-red-500" },
-                  Ammonia: { label: "Irritant", className: "" },
-                  "Polonium-210": {
-                    label: "Radioactive",
-                    className:
-                      "text-red-600 font-black italic underline animate-pulse",
-                  },
-                };
-                return (
-                  <tr
-                    key={chem}
-                    className={
-                      chem === "Polonium-210" ? "bg-orange-950/20" : ""
-                    }
-                  >
-                    <td
-                      className="p-4 font-bold cursor-pointer hover:underline text-blue-400"
-                      onClick={() => {
-                        setSelectedChemical(chem);
-                        setModalOpen(true);
-                      }}
-                    >
-                      {chem}
-                    </td>
-                    <td className="p-4 text-zinc-500 text-xs text-wrap">
-                      {uses[chem]}
-                    </td>
-                    <td
-                      className={`p-4 text-right ${toxicity[chem].className}`}
-                    >
-                      {toxicity[chem].label}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </main>
-
-      {/* Chemical Info Modal */}
-      {modalOpen && selectedChemical && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-zinc-400 hover:text-orange-500 text-xl font-bold"
-              onClick={() => setModalOpen(false)}
-            >
-              &times;
-            </button>
-            <h2 className="text-lg font-bold text-orange-500 mb-2">
-              {selectedChemical}
-            </h2>
-            <div className="mb-2 text-zinc-200 text-sm">
-              <strong>Health Effects:</strong>{" "}
-              {chemicalDetails[selectedChemical].healthEffects}
-            </div>
-            <div className="mb-2 text-zinc-200 text-sm">
-              <strong>Source:</strong>{" "}
-              <a
-                href={chemicalDetails[selectedChemical].source.split(": ")[1]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-blue-400"
               >
-                {chemicalDetails[selectedChemical].source.split(": ")[0]}
+                💨
+              </div>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: 16,
+                  letterSpacing: "-.02em",
+                }}
+              >
+                invisible<span style={{ color: "var(--orange)" }}>inhale</span>
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                background: "rgba(255,255,255,.05)",
+                borderRadius: 12,
+                padding: 4,
+              }}
+            >
+              {["US", "HU"].map((l) => (
+                <button
+                  key={l}
+                  className="locale-btn"
+                  onClick={() => setLocale(l)}
+                  style={{
+                    background: locale === l ? "var(--orange)" : "transparent",
+                    color: locale === l ? "#fff" : "var(--muted)",
+                    border: "none",
+                  }}
+                >
+                  {l === "US" ? "🇺🇸 EN" : "🇭🇺 HU"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* ── HERO ────────────────────────────────────────────────── */}
+        <section
+          ref={heroRef}
+          style={{
+            position: "relative",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "120px 24px 80px",
+            overflow: "hidden",
+          }}
+        >
+          {/* Animated background orbs */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              overflow: "hidden",
+              zIndex: 0,
+            }}
+          >
+            {/* Grid pattern */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `
+                linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)
+              `,
+                backgroundSize: "60px 60px",
+                animation: "gridPulse 4s ease-in-out infinite",
+              }}
+            />
+            {/* Smoke orbs */}
+            <div
+              style={{
+                position: "absolute",
+                top: "15%",
+                left: "10%",
+                width: 600,
+                height: 600,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,92,26,.15) 0%, transparent 70%)",
+                animation: "orb1 18s ease-in-out infinite",
+                filter: "blur(40px)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: "10%",
+                right: "5%",
+                width: 500,
+                height: 500,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,92,26,.1) 0%, transparent 70%)",
+                animation: "orb2 22s ease-in-out infinite",
+                filter: "blur(50px)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%,-50%)",
+                width: 800,
+                height: 800,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,179,71,.04) 0%, transparent 60%)",
+                filter: "blur(80px)",
+              }}
+            />
+            {/* Vignette */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "radial-gradient(ellipse at center, transparent 30%, var(--black) 100%)",
+              }}
+            />
+          </div>
+
+          {/* Content */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              maxWidth: 820,
+              margin: "0 auto",
+            }}
+          >
+            <div className="fade-up" style={{ marginBottom: 28 }}>
+              <span className="badge">
+                <span className="badge-dot" />
+                {isHU
+                  ? "Oktatási Platform • Tudományos Adatok"
+                  : "Educational Platform • Science-Backed Data"}
+              </span>
+            </div>
+
+            <h1
+              className="hero-title fade-up delay-1"
+              style={{
+                fontSize: "clamp(56px, 9vw, 110px)",
+                fontWeight: 800,
+                lineHeight: 1.0,
+                letterSpacing: "-.04em",
+                marginBottom: 28,
+              }}
+            >
+              {t.hero1}{" "}
+              <span
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  background:
+                    "linear-gradient(135deg, var(--orange) 0%, var(--amber) 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                {t.hero2}
+              </span>
+            </h1>
+
+            <p
+              className="fade-up delay-2"
+              style={{
+                fontSize: "clamp(16px, 2vw, 20px)",
+                color: "var(--muted)",
+                lineHeight: 1.7,
+                maxWidth: 560,
+                margin: "0 auto 48px",
+              }}
+            >
+              {t.heroSub}
+            </p>
+
+            <div
+              className="fade-up delay-3"
+              style={{
+                display: "flex",
+                gap: 16,
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <a
+                href="#calculator"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "16px 32px",
+                  borderRadius: 100,
+                  background: "var(--orange)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textDecoration: "none",
+                  letterSpacing: "-.01em",
+                  boxShadow: "0 0 40px rgba(255,92,26,.35)",
+                  transition: "transform .2s, box-shadow .2s",
+                }}
+                onMouseOver={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.transform = "translateY(-2px)";
+                  target.style.boxShadow = "0 0 60px rgba(255,92,26,.5)";
+                }}
+                onMouseOut={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.transform = "translateY(0)";
+                  target.style.boxShadow = "0 0 40px rgba(255,92,26,.35)";
+                }}
+              >
+                {t.cta} →
+              </a>
+              <a
+                href="#chemicals"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "16px 32px",
+                  borderRadius: 100,
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--white)",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  textDecoration: "none",
+                  letterSpacing: "-.01em",
+                  transition: "border-color .2s",
+                }}
+              >
+                {isHU ? "Vegyi anyagok" : "See Chemicals"}
               </a>
             </div>
-            <div className="mb-2 text-zinc-200 text-sm">
-              <strong>Prevention:</strong>{" "}
-              {chemicalDetails[selectedChemical].prevention}
+
+            {/* Floating stats strip */}
+            <div
+              className="fade-up delay-5"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 1,
+                marginTop: 80,
+                background: "var(--border)",
+                borderRadius: 20,
+                overflow: "hidden",
+                border: "1px solid var(--border)",
+              }}
+            >
+              {[
+                {
+                  val: "7,000+",
+                  label: isHU ? "Vegyi anyag" : "Chemicals",
+                  color: "var(--amber)",
+                },
+                {
+                  val: "3,000+",
+                  label: isHU ? "Rákkeltő anyag" : "Carcinogens",
+                  color: "var(--orange)",
+                },
+                {
+                  val: "0%",
+                  label: isHU ? "Biztonságos szint" : "Safe Exposure",
+                  color: "#ff2d55",
+                },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "28px 24px",
+                    background: "var(--surface)",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 36,
+                      fontWeight: 800,
+                      color: s.color,
+                      letterSpacing: "-.03em",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {s.val}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      marginTop: 6,
+                      fontFamily: "var(--mono)",
+                      letterSpacing: ".08em",
+                    }}
+                  >
+                    {s.label}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* Visual Comparison Chart */}
-      <section className="max-w-4xl mx-auto mt-12 mb-8 p-6 bg-zinc-900 rounded-xl border border-zinc-800">
-        <h2 className="text-lg font-bold text-orange-500 mb-4">
-          Secondhand Smoke vs. Other Environmental Risks
-        </h2>
-        <div className="w-full h-64">
-          <p className="text-zinc-400 text-sm">
-            {locale === "HU"
-              ? "Összehasonlító diagram hamarosan: passzív dohányzás, légszennyezés, radon stb."
-              : "Comparison chart coming soon: secondhand smoke, air pollution, radon, etc."}
-          </p>
-        </div>
-      </section>
-
-      {/* Health Effects Timeline */}
-      <section className="max-w-4xl mx-auto mb-8 p-6 bg-zinc-900 rounded-xl border border-zinc-800">
-        <h2 className="text-lg font-bold text-orange-500 mb-4">
-          {locale === "HU"
-            ? "Egészségügyi hatások az idő során"
-            : "Health Effects Over Time"}
-        </h2>
-        <ul className="list-none pl-0 text-sm text-zinc-400 space-y-2">
-          {locale === "HU" ? (
-            <>
-              <li>
-                <span className="font-bold text-zinc-200">1. év:</span> Növekvő
-                légúti fertőzés kockázat
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">5. év:</span> Krónikus
-                köhögés, asztma tünetek
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">10. év:</span>{" "}
-                Emelkedett szívbetegség kockázat
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">20+ év:</span>{" "}
-                Magasabb tüdőrák, stroke kockázat
-              </li>
-            </>
-          ) : (
-            <>
-              <li>
-                <span className="font-bold text-zinc-200">Year 1:</span>{" "}
-                Increased risk of respiratory infections
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">Year 5:</span> Chronic
-                cough, asthma symptoms
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">Year 10:</span>{" "}
-                Elevated risk of heart disease
-              </li>
-              <li>
-                <span className="font-bold text-zinc-200">Year 20+:</span>{" "}
-                Higher risk of lung cancer, stroke
-              </li>
-            </>
-          )}
-        </ul>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="max-w-4xl mx-auto mb-8 p-6 bg-zinc-900 rounded-xl border border-zinc-800">
-        <h2 className="text-lg font-bold text-orange-500 mb-4">
-          {locale === "HU"
-            ? "Gyakran Ismételt Kérdések"
-            : "Frequently Asked Questions"}
-        </h2>
-        <div className="space-y-4 text-sm text-zinc-400">
-          {locale === "HU" ? (
-            <>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  Valóban veszélyes a passzív dohányzás?
-                </h3>
-                <p>
-                  Igen. Nincs biztonságos szintje a kitettségnek. Több ezer
-                  vegyi anyagot tartalmaz, melyek közül sok mérgező vagy
-                  rákkeltő.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  Eltávolítható-e a füst légtisztítóval?
-                </h3>
-                <p>
-                  A légtisztítók csökkenthetik néhány részecskét, de nem
-                  távolítják el az összes toxint vagy gázt a dohányfüstből.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  Hogyan védhetem meg a családomat?
-                </h3>
-                <p>
-                  Tedd füstmentessé otthonod és autód, bátorítsd a dohányzókat a
-                  leszokásra, és kerüld a dohányzó helyeket.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  Is secondhand smoke really dangerous?
-                </h3>
-                <p>
-                  Yes. There is no safe level of exposure. It contains thousands
-                  of chemicals, many of which are toxic or carcinogenic.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  Can air purifiers eliminate secondhand smoke?
-                </h3>
-                <p>
-                  Air purifiers may reduce some particles, but cannot remove all
-                  toxins or gases from tobacco smoke.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-200">
-                  What are the best ways to protect my family?
-                </h3>
-                <p>
-                  Make your home and car smoke-free, encourage smokers to quit,
-                  and avoid places where smoking occurs.
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Call to Action Resources */}
-      <section className="max-w-4xl mx-auto mb-8 p-6 bg-zinc-900 rounded-xl border border-zinc-800">
-        <h2 className="text-lg font-bold text-orange-500 mb-4">
-          {locale === "HU" ? "Tegyél lépéseket" : "Take Action"}
-        </h2>
-        <ul className="list-disc pl-6 text-sm text-zinc-400 space-y-2">
-          {locale === "HU" ? (
-            <>
-              <li>
-                <a
-                  href="https://smokefree.gov/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  Smokefree.gov — Ingyenes leszokási források
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.lung.org/quit-smoking"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  American Lung Association — Leszokás támogatás
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.tobaccofreekids.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  Campaign for Tobacco-Free Kids — Gyermekek védelme
-                </a>
-              </li>
-            </>
-          ) : (
-            <>
-              <li>
-                <a
-                  href="https://smokefree.gov/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  Smokefree.gov — Free quit resources
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.lung.org/quit-smoking"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  American Lung Association — Quit Smoking
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.tobaccofreekids.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-blue-400"
-                >
-                  Campaign for Tobacco-Free Kids
-                </a>
-              </li>
-            </>
-          )}
-        </ul>
-      </section>
-
-      {/* Policy & Advocacy Info */}
-      <section className="max-w-4xl mx-auto mb-8 p-6 bg-zinc-900 rounded-xl border border-zinc-800">
-        <h2 className="text-lg font-bold text-orange-500 mb-4">
-          {locale === "HU" ? "Politika & Érdekképviselet" : "Policy & Advocacy"}
-        </h2>
-        <ul className="list-disc pl-6 text-sm text-zinc-400 space-y-1">
-          {locale === "HU" ? (
-            <>
-              <li>Támogasd a füstmentes törvényeket a közösségedben</li>
-              <li>Állj ki a tiszta levegőért az iskolákban és munkahelyeken</li>
-              <li>Oszd meg az oktatási forrásokat másokkal</li>
-            </>
-          ) : (
-            <>
-              <li>Support smoke-free laws in your community</li>
-              <li>Advocate for clean air in schools and workplaces</li>
-              <li>Share educational resources with others</li>
-            </>
-          )}
-        </ul>
-        <p className="text-xs text-zinc-500 mt-2">
-          {locale === "HU" ? "További információ: " : "Learn more at "}
-          <a
-            href="https://www.tobaccofreekids.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-blue-400"
+        {/* ── TICKER ──────────────────────────────────────────────── */}
+        <div
+          className="ticker-wrap"
+          style={{ position: "relative", zIndex: 2 }}
+        >
+          <div
+            className="ticker-inner"
+            style={{
+              fontFamily: "var(--mono)",
+              fontSize: 12,
+              color: "var(--muted)",
+              letterSpacing: ".15em",
+            }}
           >
-            Campaign for Tobacco-Free Kids
-          </a>
-          .
-        </p>
-      </section>
-
-      {/* Scientific Methodology */}
-      <section className="max-w-4xl mx-auto mt-16 p-6 border-l-4 border-orange-600 bg-zinc-900/50 rounded-r-xl">
-        <h3 className="text-xl font-bold text-zinc-200 mb-4 tracking-tight">
-          {locale === "HU" ? "Tudományos módszertan" : "Scientific Methodology"}
-        </h3>
-        <div className="space-y-4 text-sm text-zinc-400 leading-relaxed">
-          <p>
-            <strong className="text-zinc-200">
-              {locale === "HU"
-                ? '"Cigaretta-egyenértékű" számítás:'
-                : 'The "Cigarette Equivalent" Calculation:'}
-            </strong>{" "}
-            {locale === "HU"
-              ? "A 2006-os Surgeon General jelentés alapján nincs biztonságos kitettségi szint. Modellünk konzervatív becslést használ: napi 1,5 cigaretta azok számára, akik magas kitettségű háztartásban élnek, a lakóhelyeken mért átlagos PM₂.₅ koncentrációk alapján (kb. 70–150 μg/m³)."
-              : "Based on the 2006 Surgeon General's Report, there is no safe level of exposure. Our model uses a conservative estimate of 1.5 cigarettes/day for individuals living in a high-exposure household, based on mean PM₂.₅ concentrations observed in residential settings (approx. 70–150 μg/m³)."}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 font-mono text-xs">
-            <div className="p-3 bg-black/40 rounded border border-zinc-800">
-              <p className="text-zinc-500 mb-1 uppercase tracking-widest">
-                [Source 01]
-              </p>
-              <p>
-                {locale === "HU"
-                  ? 'U.S. Egészségügyi és Humán Szolgáltatások Minisztériuma. "A dohányfüstnek való akaratlan kitettség egészségügyi következményei: A Surgeon General jelentése."'
-                  : 'U.S. Dept. of Health and Human Services. "The Health Consequences of Involuntary Exposure to Tobacco Smoke: A Report of the Surgeon General."'}
-              </p>
-            </div>
-            <div className="p-3 bg-black/40 rounded border border-zinc-800">
-              <p className="text-zinc-500 mb-1 uppercase tracking-widest">
-                [Source 02]
-              </p>
-              <p>
-                {locale === "HU"
-                  ? 'Nemzetközi Rákkutató Ügynökség (IARC). "Monográfia 83. kötet: Dohányfüst és akaratlan dohányzás."'
-                  : 'International Agency for Research on Cancer (IARC). "Monograph Volume 83: Tobacco Smoke and Involuntary Smoking."'}
-              </p>
-            </div>
+            {Array(4)
+              .fill(
+                "● FORMALDEHYDE ● BENZENE ● ARSENIC ● AMMONIA ● POLONIUM-210 ● HYDROGEN CYANIDE ● LEAD ● CHROMIUM ● NITROSAMINES ● ACROLEIN ● 1,3-BUTADIENE ",
+              )
+              .join(" ")}
           </div>
         </div>
-      </section>
 
-      <footer className="max-w-4xl mx-auto mt-20 pb-12 text-zinc-500 border-t border-zinc-800 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h4 className="text-zinc-300 font-bold mb-2 uppercase text-xs tracking-widest">
-              {locale === "HU" ? "Adatforrások" : "Data Sources"}
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                •{" "}
-                <a
-                  href="https://www.hhs.gov/sites/default/files/secondhand-smoke-consumer.pdf"
-                  target="_blank"
-                  className="underline hover:text-orange-500"
+        {/* ── CALCULATOR ──────────────────────────────────────────── */}
+        <section
+          id="calculator"
+          style={{ padding: "100px 24px", position: "relative" }}
+        >
+          <div className="container">
+            <div style={{ marginBottom: 56, textAlign: "center" }}>
+              <div className="badge" style={{ marginBottom: 20 }}>
+                <span className="badge-dot" />
+                {isHU ? "Interaktív Eszköz" : "Interactive Tool"}
+              </div>
+              <h2
+                style={{
+                  fontSize: "clamp(32px, 5vw, 56px)",
+                  fontWeight: 800,
+                  letterSpacing: "-.03em",
+                  lineHeight: 1.1,
+                  marginBottom: 16,
+                }}
+              >
+                {t.calcTitle}
+              </h2>
+              <p
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 16,
+                  maxWidth: 500,
+                  margin: "0 auto",
+                }}
+              >
+                {isHU
+                  ? "Állítsd be a paramétereket és nézd meg valós időben a kitettségedet."
+                  : "Adjust the parameters and see your personalized exposure in real time."}
+              </p>
+            </div>
+
+            {/* Source note */}
+            <div
+              style={{
+                background: "rgba(255,179,71,.06)",
+                border: "1px solid rgba(255,179,71,.2)",
+                borderRadius: 14,
+                padding: "16px 20px",
+                marginBottom: 36,
+                fontFamily: "var(--mono)",
+                fontSize: 12,
+                color: "rgba(255,179,71,.8)",
+                lineHeight: 1.6,
+              }}
+            >
+              📊{" "}
+              {isHU
+                ? "Modell: napi 1,5 passzív cigaretta (2006 Surgeon General Report & IARC Monograph Vol. 83). Egy cigaretta >7 000 vegyi anyagot tartalmaz."
+                : "Model: 1.5 cigarettes/day passive exposure (2006 Surgeon General Report & IARC Monograph Vol. 83). Each cigarette contains 7,000+ chemicals."}
+            </div>
+
+            {/* Controls grid */}
+            <div
+              className="glass"
+              style={{ padding: "36px", marginBottom: 24 }}
+            >
+              <div
+                className="grid-3"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 20,
+                  marginBottom: 28,
+                }}
+              >
+                {[
+                  {
+                    label: t.yearsLabel,
+                    id: "years",
+                    value: years,
+                    set: setYears,
+                    min: 1,
+                    max: 50,
+                    step: 1,
+                  },
+                  {
+                    label: t.cigsLabel,
+                    id: "cigs",
+                    value: cigsPerDay,
+                    set: setCigsPerDay,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  {
+                    label: t.smokersLabel,
+                    id: "smokers",
+                    value: smokers,
+                    set: setSmokers,
+                    min: 1,
+                    max: 10,
+                    step: 1,
+                  },
+                  {
+                    label: t.sizeLabel,
+                    id: "size",
+                    value: envSize,
+                    set: setEnvSize,
+                    min: 100,
+                    max: 5000,
+                    step: 50,
+                  },
+                ].map(({ label, id, value, set, min, max, step }) => (
+                  <div key={id}>
+                    <label htmlFor={id} className="inp-label">
+                      {label}
+                    </label>
+                    <input
+                      id={id}
+                      type="number"
+                      className="inp"
+                      min={min}
+                      max={max}
+                      step={step}
+                      value={value}
+                      onChange={(e) => set(Number(e.target.value))}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label htmlFor="room" className="inp-label">
+                    {t.roomLabel}
+                  </label>
+                  <select
+                    id="room"
+                    className="inp"
+                    value={roomClean ? "yes" : "no"}
+                    onChange={(e) => setRoomClean(e.target.value === "yes")}
+                  >
+                    <option value="yes">{isHU ? "Igen ✓" : "Yes ✓"}</option>
+                    <option value="no">{isHU ? "Nem ✗" : "No ✗"}</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Year slider */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}
                 >
-                  {locale === "HU"
-                    ? "U.S. Surgeon General jelentés (2006)"
-                    : "U.S. Surgeon General Report (2006)"}
-                </a>
-              </li>
-              <li>
-                •{" "}
-                <a
-                  href="https://www.who.int/news-room/fact-sheets/detail/tobacco"
-                  target="_blank"
-                  className="underline hover:text-orange-500"
-                >
-                  {locale === "HU"
-                    ? "WHO: Dohányzás & Egészség adatlap"
-                    : "WHO: Tobacco & Health Fact Sheet"}
-                </a>
-              </li>
-              <li>
-                •{" "}
-                <a
-                  href="https://www.ncbi.nlm.nih.gov/books/NBK316407/"
-                  target="_blank"
-                  className="underline hover:text-orange-500"
-                >
-                  {locale === "HU"
-                    ? "IARC Monográfia 83. kötet (Dohányfüst)"
-                    : "IARC Monograph Vol. 83 (Tobacco Smoke)"}
-                </a>
-              </li>
-            </ul>
+                  <span
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {isHU ? "Kitettség" : "Exposure"}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--orange)",
+                    }}
+                  >
+                    {years} {isHU ? "év" : "years"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  value={years}
+                  onChange={(e) => setYears(Number(e.target.value))}
+                />
+              </div>
+            </div>
+
+            {/* Stat cards */}
+            <div
+              className="grid-3"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 16,
+              }}
+            >
+              {[
+                {
+                  label: t.stat1,
+                  value: stats.totalCigs.toLocaleString(),
+                  color: "var(--orange)",
+                  icon: "🚬",
+                  tooltip: isHU
+                    ? "Évek × 365 × cig/nap × kitettségi faktor"
+                    : "Years × 365 × cig/day × exposure factor",
+                },
+                {
+                  label: t.stat2,
+                  value: stats.chemicals.toLocaleString(),
+                  color: "var(--amber)",
+                  icon: "⚗️",
+                  tooltip: isHU
+                    ? "Összes cigaretta × 7 000"
+                    : "Total cigarettes × 7,000 chemicals",
+                },
+                {
+                  label: t.stat3,
+                  value: `${currencySymbol}${stats.money.toLocaleString()}${currencySuffix}`,
+                  color: "#4ade80",
+                  icon: "💸",
+                  tooltip: isHU
+                    ? "Alapvonal cig × ár. Nem függ a mérettől."
+                    : "Baseline cigs × cost. Not affected by environment size.",
+                },
+              ].map(({ label, value, color, icon, tooltip }) => (
+                <div key={label} className="stat-card" title={tooltip}>
+                  <div style={{ fontSize: 24, marginBottom: 14 }}>{icon}</div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      color: "var(--muted)",
+                      letterSpacing: ".1em",
+                      textTransform: "uppercase",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(24px, 3vw, 36px)",
+                      fontWeight: 800,
+                      color,
+                      letterSpacing: "-.03em",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {value}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: "rgba(255,255,255,.2)",
+                      marginTop: 8,
+                      fontFamily: "var(--mono)",
+                    }}
+                  >
+                    {isHU
+                      ? "Hover a számítás részleteiért"
+                      : "Hover for calculation details"}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="text-xs leading-relaxed">
-            <h4 className="text-zinc-300 font-bold mb-2 uppercase text-xs tracking-widest">
-              {locale === "HU" ? "Figyelmeztetés" : "Disclaimer"}
-            </h4>
-            <p>
-              {locale === "HU"
-                ? "Ez a vizualizáció oktatási célú eszköz, amely bevált közegészségügyi proxykra épül. Személyre szabott egészségügyi értékeléshez fordulj orvoshoz a hosszú távú légzőszervi kitettség kapcsán."
-                : "This visualization is an educational tool based on established public health proxies. For a personalized health assessment, please consult a medical professional regarding long-term respiratory exposure."}
+        </section>
+
+        {/* ── CHART ───────────────────────────────────────────────── */}
+        <section style={{ padding: "0 24px 100px" }}>
+          <div className="container">
+            <div className="glass" style={{ padding: "36px" }}>
+              <div style={{ marginBottom: 28 }}>
+                <h3
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    letterSpacing: "-.02em",
+                    marginBottom: 6,
+                  }}
+                >
+                  {t.chartTitle}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 12,
+                    color: "var(--muted)",
+                  }}
+                >
+                  {isHU
+                    ? `${years} éves periódus • Összes bevett cigaretta`
+                    : `${years}-year period • Cumulative passive cigarettes inhaled`}
+                </p>
+              </div>
+              <div style={{ height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient
+                        id="gradOrange"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#ff5c1a"
+                          stopOpacity={0.6}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#ff5c1a"
+                          stopOpacity={0.0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="year"
+                      stroke="rgba(255,255,255,.15)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      fontFamily="var(--mono)"
+                    />
+                    <YAxis
+                      stroke="rgba(255,255,255,.15)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      fontFamily="var(--mono)"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "#111118",
+                        border: "1px solid rgba(255,92,26,.3)",
+                        borderRadius: 12,
+                        fontFamily: "var(--mono)",
+                        fontSize: 12,
+                      }}
+                      itemStyle={{ color: "var(--orange)" }}
+                      labelStyle={{ color: "var(--muted)" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="cigs"
+                      stroke="#ff5c1a"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#gradOrange)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── HEALTH TIMELINE ─────────────────────────────────────── */}
+        <section style={{ padding: "0 24px 100px" }}>
+          <div className="container">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+              className="grid-2"
+            >
+              {[
+                {
+                  year: isHU ? "1. év" : "Year 1",
+                  text: isHU
+                    ? "Növekvő légúti fertőzés kockázat, szemirritáció"
+                    : "Increased respiratory infections, eye irritation",
+                  color: "#f59e0b",
+                },
+                {
+                  year: isHU ? "5. év" : "Year 5",
+                  text: isHU
+                    ? "Krónikus köhögés, asztma tünetek erősödése"
+                    : "Chronic cough, worsening asthma symptoms",
+                  color: "#f97316",
+                },
+                {
+                  year: isHU ? "10. év" : "Year 10",
+                  text: isHU
+                    ? "Emelkedett szívbetegség és stroke kockázat"
+                    : "Elevated risk of heart disease and stroke",
+                  color: "#ef4444",
+                },
+                {
+                  year: isHU ? "20+ év" : "Year 20+",
+                  text: isHU
+                    ? "Magasabb tüdőrák kockázat, tartós tüdőkárosodás"
+                    : "Higher lung cancer risk, permanent lung damage",
+                  color: "#ff2d55",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="glass"
+                  style={{
+                    padding: "24px",
+                    borderLeft: `3px solid ${item.color}`,
+                    borderRadius: "0 16px 16px 0",
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                      color: item.color,
+                      letterSpacing: ".1em",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {item.year}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: "var(--white)",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {item.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CHEMICALS ───────────────────────────────────────────── */}
+        <section id="chemicals" style={{ padding: "0 24px 100px" }}>
+          <div className="container">
+            <div style={{ marginBottom: 48, textAlign: "center" }}>
+              <div className="badge" style={{ marginBottom: 20 }}>
+                ⚗️ {isHU ? "Toxikológia" : "Toxicology"}
+              </div>
+              <h2
+                style={{
+                  fontSize: "clamp(28px, 4vw, 48px)",
+                  fontWeight: 800,
+                  letterSpacing: "-.03em",
+                }}
+              >
+                {t.chemTitle}
+              </h2>
+              <p
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 14,
+                  marginTop: 10,
+                  fontFamily: "var(--mono)",
+                }}
+              >
+                {t.chemSub}
+              </p>
+            </div>
+
+            <div className="glass" style={{ overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr
+                    style={{
+                      background: "rgba(255,255,255,.03)",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    {[
+                      "Chemical",
+                      isHU ? "Ipari felhasználás" : "Industrial Use",
+                      isHU ? "Toxicitás" : "Toxicity",
+                      "",
+                    ].map((h, i) => (
+                      <th
+                        key={i}
+                        style={{
+                          padding: "16px 20px",
+                          textAlign:
+                            i === 2 ? "center" : i === 3 ? "right" : "left",
+                          fontFamily: "var(--mono)",
+                          fontSize: 10,
+                          letterSpacing: ".15em",
+                          color: "var(--muted)",
+                          fontWeight: 500,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(CHEMICALS).map(([name, data], i) => (
+                    <tr
+                      key={name}
+                      className="chem-row"
+                      style={{
+                        borderBottom:
+                          i < 4 ? "1px solid var(--border)" : "none",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: "20px",
+                          fontWeight: 700,
+                          fontSize: 15,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              background:
+                                TOXICITY_COLORS[
+                                  data.level as keyof typeof TOXICITY_COLORS
+                                ],
+                              ...(name === "Polonium-210"
+                                ? { animation: "radioactive 1s infinite" }
+                                : {}),
+                            }}
+                          />
+                          {name}
+                        </div>
+                      </td>
+                      <td
+                        style={{
+                          padding: "20px",
+                          fontFamily: "var(--mono)",
+                          fontSize: 12,
+                          color: "var(--muted)",
+                        }}
+                      >
+                        {data.use}
+                      </td>
+                      <td style={{ padding: "20px", textAlign: "center" }}>
+                        <span
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: 100,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            fontFamily: "var(--mono)",
+                            letterSpacing: ".05em",
+                            background: `${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}20`,
+                            color:
+                              TOXICITY_COLORS[
+                                data.level as keyof typeof TOXICITY_COLORS
+                              ],
+                            border: `1px solid ${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}40`,
+                          }}
+                        >
+                          {data.toxicity}
+                        </span>
+                      </td>
+                      <td style={{ padding: "20px", textAlign: "right" }}>
+                        <button
+                          onClick={() => openModal(name)}
+                          style={{
+                            background: "rgba(255,255,255,.05)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 8,
+                            padding: "6px 14px",
+                            color: "var(--white)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            fontFamily: "var(--mono)",
+                            transition: "background .2s",
+                          }}
+                          onMouseOver={(e) =>
+                            ((e.target as HTMLElement).style.background =
+                              "rgba(255,92,26,.15)")
+                          }
+                          onMouseOut={(e) =>
+                            ((e.target as HTMLElement).style.background =
+                              "rgba(255,255,255,.05)")
+                          }
+                        >
+                          {isHU ? "részletek →" : "details →"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ─────────────────────────────────────────────────── */}
+        <section style={{ padding: "0 24px 100px" }}>
+          <div className="container">
+            <h2
+              style={{
+                fontSize: "clamp(28px, 4vw, 48px)",
+                fontWeight: 800,
+                letterSpacing: "-.03em",
+                marginBottom: 40,
+                textAlign: "center",
+              }}
+            >
+              {t.faqTitle}
+            </h2>
+            <div style={{ display: "grid", gap: 12 }}>
+              {(isHU
+                ? [
+                    {
+                      q: "Valóban veszélyes a passzív dohányzás?",
+                      a: "Igen. Nincs biztonságos kitettségi szint. Több ezer vegyi anyagot tartalmaz, melyek közül sok mérgező vagy rákkeltő.",
+                    },
+                    {
+                      q: "Eltávolítható-e a füst légtisztítóval?",
+                      a: "A légtisztítók csökkenthetik néhány részecskét, de nem távolítják el az összes toxint vagy gázt a dohányfüstből.",
+                    },
+                    {
+                      q: "Hogyan védhetem meg a családomat?",
+                      a: "Tedd füstmentessé otthonod és autód, bátorítsd a dohányzókat a leszokásra, és kerüld a dohányzó helyeket.",
+                    },
+                  ]
+                : [
+                    {
+                      q: "Is secondhand smoke really dangerous?",
+                      a: "Yes. There is no safe level of exposure. It contains thousands of chemicals, many of which are toxic or carcinogenic, as established by the Surgeon General.",
+                    },
+                    {
+                      q: "Can air purifiers eliminate secondhand smoke?",
+                      a: "Air purifiers may reduce some particles, but cannot remove all toxins or gases from tobacco smoke. Elimination at the source is the only guaranteed protection.",
+                    },
+                    {
+                      q: "What are the best ways to protect my family?",
+                      a: "Make your home and car smoke-free, encourage smokers to quit, and avoid places where smoking occurs.",
+                    },
+                  ]
+              ).map(({ q, a }, i) => (
+                <div key={i} className="glass" style={{ padding: "24px 28px" }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 15,
+                      marginBottom: 10,
+                      letterSpacing: "-.01em",
+                    }}
+                  >
+                    {q}
+                  </div>
+                  <div
+                    style={{
+                      color: "var(--muted)",
+                      fontSize: 14,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {a}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── ACTION + METHODOLOGY ────────────────────────────────── */}
+        <section style={{ padding: "0 24px 100px" }}>
+          <div className="container">
+            <div
+              className="grid-2"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 24,
+              }}
+            >
+              {/* Take Action */}
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,92,26,.15) 0%, rgba(255,92,26,.04) 100%)",
+                  border: "1px solid rgba(255,92,26,.25)",
+                  borderRadius: 24,
+                  padding: 36,
+                }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 16 }}>🚭</div>
+                <h3
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 800,
+                    letterSpacing: "-.02em",
+                    marginBottom: 20,
+                  }}
+                >
+                  {t.actionTitle}
+                </h3>
+                {[
+                  {
+                    href: "https://smokefree.gov/",
+                    label: isHU
+                      ? "Smokefree.gov — Ingyenes eszközök"
+                      : "Smokefree.gov — Free quit resources",
+                  },
+                  {
+                    href: "https://www.lung.org/quit-smoking",
+                    label: isHU
+                      ? "American Lung Association"
+                      : "American Lung Association",
+                  },
+                  {
+                    href: "https://www.tobaccofreekids.org/",
+                    label: isHU
+                      ? "Campaign for Tobacco-Free Kids"
+                      : "Campaign for Tobacco-Free Kids",
+                  },
+                ].map(({ href, label }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 0",
+                      borderBottom: "1px solid rgba(255,255,255,.06)",
+                      color: "var(--white)",
+                      textDecoration: "none",
+                      fontSize: 14,
+                      transition: "color .2s",
+                    }}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.color = "var(--orange)")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.color = "var(--white)")
+                    }
+                  >
+                    <span style={{ color: "var(--orange)" }}>→</span> {label}
+                  </a>
+                ))}
+              </div>
+
+              {/* Methodology */}
+              <div className="glass" style={{ padding: 36 }}>
+                <div style={{ fontSize: 32, marginBottom: 16 }}>🔬</div>
+                <h3
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 800,
+                    letterSpacing: "-.02em",
+                    marginBottom: 16,
+                  }}
+                >
+                  {isHU ? "Tudományos Módszertan" : "Scientific Methodology"}
+                </h3>
+                <p
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 13,
+                    lineHeight: 1.7,
+                    marginBottom: 20,
+                  }}
+                >
+                  {isHU
+                    ? "A modell konzervatív becslést alkalmaz: napi 1,5 cigaretta azok számára, akik magas kitettségű háztartásban élnek (PM₂.₅: 70–150 μg/m³)."
+                    : "Our model uses a conservative estimate of 1.5 cigarettes/day for individuals living in high-exposure households, based on mean PM₂.₅ concentrations of 70–150 μg/m³."}
+                </p>
+                {[
+                  {
+                    code: "[SRC 01]",
+                    text: isHU
+                      ? "U.S. Surgeon General Report, 2006"
+                      : "U.S. Surgeon General Report, 2006",
+                  },
+                  {
+                    code: "[SRC 02]",
+                    text: isHU
+                      ? "IARC Monograph Vol. 83: Tobacco Smoke"
+                      : "IARC Monograph Vol. 83: Tobacco Smoke",
+                  },
+                ].map(({ code, text }) => (
+                  <div
+                    key={code}
+                    style={{
+                      background: "rgba(0,0,0,.4)",
+                      borderRadius: 10,
+                      padding: "12px 16px",
+                      marginBottom: 8,
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                    }}
+                  >
+                    <span style={{ color: "var(--orange)", marginRight: 8 }}>
+                      {code}
+                    </span>
+                    <span style={{ color: "var(--muted)" }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FOOTER ──────────────────────────────────────────────── */}
+        <footer
+          style={{
+            borderTop: "1px solid var(--border)",
+            padding: "48px 24px",
+            textAlign: "center",
+          }}
+        >
+          <div className="container">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "linear-gradient(135deg, var(--orange), #ff9f50)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 14,
+                }}
+              >
+                💨
+              </div>
+              <span style={{ fontWeight: 800, fontSize: 15 }}>
+                invisible<span style={{ color: "var(--orange)" }}>inhale</span>
+              </span>
+            </div>
+            <p
+              style={{
+                color: "var(--muted)",
+                fontSize: 12,
+                fontFamily: "var(--mono)",
+                maxWidth: 500,
+                margin: "0 auto 16px",
+                lineHeight: 1.7,
+              }}
+            >
+              {t.disclaimer}
+            </p>
+            <p
+              style={{
+                color: "rgba(255,255,255,.15)",
+                fontSize: 11,
+                fontFamily: "var(--mono)",
+              }}
+            >
+              © {new Date().getFullYear()} Invisible Inhale — Educational
+              Platform
             </p>
           </div>
-        </div>
-      </footer>
+        </footer>
 
-      <footer className="max-w-4xl mx-auto mt-12 pt-8 border-t border-zinc-800 text-zinc-600 text-sm">
-        <p>
-          &copy; {new Date().getFullYear()} Invisible Inhale: Explore the Impact
-          of Second-Hand Smoke
-        </p>
-      </footer>
-    </div>
+        {/* ── CHEMICAL MODAL ──────────────────────────────────────── */}
+        {modalOpen &&
+          selectedChem &&
+          (() => {
+            // Type guard: ensure selectedChem is a valid ChemicalName
+            if (!Object.keys(CHEMICALS).includes(selectedChem)) return null;
+            const chemKey = selectedChem as ChemicalName;
+            const chemData = CHEMICALS[chemKey];
+            const color = TOXICITY_COLORS[chemData.level];
+            return (
+              <div
+                className="modal-overlay"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setModalOpen(false);
+                }}
+              >
+                <div className="modal-box">
+                  <button
+                    onClick={() => setModalOpen(false)}
+                    style={{
+                      position: "absolute",
+                      top: 16,
+                      right: 16,
+                      background: "rgba(255,255,255,.07)",
+                      border: "none",
+                      borderRadius: 8,
+                      width: 32,
+                      height: 32,
+                      cursor: "pointer",
+                      color: "var(--white)",
+                      fontSize: 18,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ×
+                  </button>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 24,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: "50%",
+                        background: color,
+                        ...(chemKey === "Polonium-210"
+                          ? { animation: "radioactive 1s infinite" }
+                          : {}),
+                      }}
+                    />
+                    <h2
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 800,
+                        letterSpacing: "-.02em",
+                      }}
+                    >
+                      {chemKey}
+                    </h2>
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        borderRadius: 100,
+                        fontSize: 10,
+                        fontFamily: "var(--mono)",
+                        fontWeight: 700,
+                        background: `${color}20`,
+                        color: color,
+                        border: `1px solid ${color}40`,
+                      }}
+                    >
+                      {chemData.toxicity}
+                    </span>
+                  </div>
+
+                  {[
+                    {
+                      icon: "🫁",
+                      label: isHU ? "Egészségügyi hatások" : "Health Effects",
+                      val: chemData.healthEffects,
+                    },
+                    {
+                      icon: "🛡️",
+                      label: isHU ? "Megelőzés" : "Prevention",
+                      val: chemData.prevention,
+                    },
+                  ].map(({ icon, label, val }) => (
+                    <div key={label} style={{ marginBottom: 20 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--mono)",
+                          fontSize: 10,
+                          color: "var(--muted)",
+                          letterSpacing: ".1em",
+                          textTransform: "uppercase",
+                          marginBottom: 8,
+                        }}
+                      >
+                        {icon} {label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: "var(--white)",
+                          lineHeight: 1.7,
+                        }}
+                      >
+                        {val}
+                      </div>
+                    </div>
+                  ))}
+
+                  <a
+                    href={chemData.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 18px",
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,.06)",
+                      border: "1px solid var(--border)",
+                      color: "var(--orange)",
+                      textDecoration: "none",
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                    }}
+                  >
+                    → {chemData.source}
+                  </a>
+                </div>
+              </div>
+            );
+          })()}
+      </div>
+    </>
   );
 }
