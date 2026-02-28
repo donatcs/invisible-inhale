@@ -85,6 +85,10 @@ const FontLink = () => (
       from { opacity:0; transform:scale(.96) translateY(16px); }
       to   { opacity:1; transform:scale(1) translateY(0); }
     }
+    @keyframes lineReveal {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
 
     .fade-up { animation: fadeUp .7s ease both; }
     .delay-1 { animation-delay: .1s; }
@@ -212,6 +216,42 @@ const FontLink = () => (
       position: relative;
     }
 
+    /* ── Story lines ────────────────────────── */
+    .story-line {
+      display: block;
+      overflow: hidden;
+    }
+    .story-line span {
+      display: inline-block;
+      animation: fadeUp .6s ease both;
+    }
+
+    /* ── Promise divider ────────────────────── */
+    .promise-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 36px auto;
+      max-width: 480px;
+      justify-content: center;
+    }
+    .promise-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,92,26,.4));
+    }
+    .promise-line.right {
+      background: linear-gradient(90deg, rgba(255,92,26,.4), transparent);
+    }
+    .promise-text {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--orange);
+      white-space: nowrap;
+      letter-spacing: .01em;
+    }
+
     /* ── Scrollbar ──────────────────────────── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--black); }
@@ -240,6 +280,7 @@ const FontLink = () => (
       .action-grid { grid-template-columns: 1fr !important; }
       .stat-card { padding: 20px !important; }
       .nav-inner { padding: 0 16px !important; }
+      .promise-wrap { margin: 24px auto; }
     }
 
     @media (max-width: 480px) {
@@ -355,7 +396,7 @@ const TOXICITY_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function SmokeTracker() {
-  const [locale, setLocale] = useState("HU");
+  const [locale, setLocale] = useState("US");
   const [years, setYears] = useState(25);
   const [cigsPerDay, setCigsPerDay] = useState(1.5);
   const [smokers, setSmokers] = useState(1);
@@ -397,12 +438,31 @@ export default function SmokeTracker() {
   };
 
   const t = {
-    hero1: "The Invisible",
-    hero2: "Inhale",
-    heroSub: isHU
-      ? "Minden légvételeddel vegyi anyagok ezreit szívod be. Vizualizáljuk a passzív dohányzás valódi hatásait."
-      : "With every breath, thousands of chemicals enter your lungs uninvited. We visualize the true cost of secondhand smoke.",
-    cta: isHU ? "Töltsd ki a kvízt" : "Take the Assessment",
+    // ── NEW hero narrative copy ──────────────────────────────────
+    heroEyebrow: isHU
+      ? "Oktatási Platform • Tudományos Adatok"
+      : "Secondhand smoke exposure platform • Science-backed data",
+    heroLine1: isHU ? "A lélegzet," : "The inhale",
+    heroLine2: isHU ? "amit soha nem" : "you never",
+    heroLine3: isHU ? "választottál." : "chose to take.",
+    heroStory: isHU
+      ? [
+          "Nem te gyújtottál rá.",
+          "Nem te döntöttél a belélegzés mellett.",
+          "Mégis megtörtént — otthon, autóban, valaki mellett, akit szeretsz.",
+          "Az Invisible Inhale láthatóvá teszi a rejtett kitettséget. Először láthatod pontosan, mi kerül a tüdődbe engedélyed nélkül — és mit jelent ez az egészségedre nézve.",
+        ]
+      : [
+          "You didn't light the cigarette.",
+          "You didn't choose to breathe it in.",
+          "But it happened — in your home, in a car, beside someone you love.",
+          "Invisible Inhale makes that hidden exposure visible. For the first time, see exactly what went into your lungs without your permission — and what it means for your health.",
+        ],
+    heroPromise: isHU
+      ? "Láthatóvá tesszük a láthatatlant."
+      : "We make the invisible, visible.",
+    cta: isHU ? "Töltsd ki a kvízt" : "Calculate My Exposure",
+    chemBtn: isHU ? "Vegyi anyagok" : "See Chemicals",
     calcTitle: isHU ? "Kockázat Kalkulátor" : "Risk Calculator",
     yearsLabel: isHU ? "Kitettség évei" : "Years Exposed",
     cigsLabel: isHU ? "Cigaretta/nap (passzív)" : "Cigarettes/Day (passive)",
@@ -528,7 +588,7 @@ export default function SmokeTracker() {
             overflow: "hidden",
           }}
         >
-          {/* Animated background orbs */}
+          {/* Animated background */}
           <div
             style={{
               position: "absolute",
@@ -537,7 +597,6 @@ export default function SmokeTracker() {
               zIndex: 0,
             }}
           >
-            {/* Grid pattern */}
             <div
               style={{
                 position: "absolute",
@@ -550,7 +609,6 @@ export default function SmokeTracker() {
                 animation: "gridPulse 4s ease-in-out infinite",
               }}
             />
-            {/* Smoke orbs */}
             <div
               style={{
                 position: "absolute",
@@ -593,7 +651,6 @@ export default function SmokeTracker() {
                 filter: "blur(80px)",
               }}
             />
-            {/* Vignette */}
             <div
               style={{
                 position: "absolute",
@@ -604,73 +661,132 @@ export default function SmokeTracker() {
             />
           </div>
 
-          {/* Content */}
+          {/* ── Hero content ── */}
           <div
             style={{
               position: "relative",
               zIndex: 1,
-              maxWidth: "100%",
-              width: "820px",
+              maxWidth: "820px",
+              width: "100%",
               margin: "0 auto",
             }}
           >
-            <div className="fade-up" style={{ marginBottom: 28 }}>
+            {/* Eyebrow badge */}
+            <div className="fade-up" style={{ marginBottom: 32 }}>
               <span className="badge">
                 <span className="badge-dot" />
-                {isHU
-                  ? "Oktatási Platform • Tudományos Adatok"
-                  : "Educational Platform • Science-Backed Data"}
+                {t.heroEyebrow}
               </span>
             </div>
 
+            {/* Main headline — 3 lines with staggered animation */}
             <h1
-              className="hero-title fade-up delay-1"
               style={{
-                fontSize: "clamp(36px, 9vw, 110px)",
+                fontSize: "clamp(38px, 9vw, 108px)",
                 fontWeight: 800,
                 lineHeight: 1.0,
                 letterSpacing: "-.04em",
-                marginBottom: 28,
+                marginBottom: 0,
               }}
             >
-              {t.hero1}{" "}
               <span
-                style={{
-                  fontFamily: "var(--serif)",
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  background:
-                    "linear-gradient(135deg, var(--orange) 0%, var(--amber) 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
+                className="story-line"
+                style={{ display: "block", overflow: "hidden" }}
               >
-                {t.hero2}
+                <span
+                  className="fade-up delay-1"
+                  style={{ display: "inline-block" }}
+                >
+                  {t.heroLine1}
+                </span>
+              </span>
+              <span
+                className="story-line"
+                style={{ display: "block", overflow: "hidden" }}
+              >
+                <span
+                  className="fade-up delay-2"
+                  style={{ display: "inline-block" }}
+                >
+                  {t.heroLine2}
+                </span>
+              </span>
+              <span
+                className="story-line"
+                style={{ display: "block", overflow: "hidden" }}
+              >
+                <span
+                  className="fade-up delay-3"
+                  style={{
+                    display: "inline-block",
+                    fontFamily: "var(--serif)",
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    background:
+                      "linear-gradient(135deg, var(--orange) 0%, var(--amber) 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {t.heroLine3}
+                </span>
               </span>
             </h1>
-            <p
-              className="fade-up delay-2"
+
+            {/* Brand promise */}
+            <div className="promise-wrap fade-up delay-4">
+              <div className="promise-line" />
+              <span className="promise-text">{t.heroPromise}</span>
+              <div className="promise-line right" />
+            </div>
+
+            {/* Story paragraph */}
+            <div
+              className="fade-up delay-5"
               style={{
-                fontSize: "clamp(16px, 4vw, 20px)",
-                color: "var(--muted)",
-                lineHeight: 1.7,
-                maxWidth: "95vw",
+                maxWidth: 560,
                 margin: "0 auto 48px",
+                textAlign: "center",
               }}
             >
-              {t.heroSub}
-            </p>
+              {t.heroStory.map((line, i) => (
+                <p
+                  key={i}
+                  style={{
+                    fontSize:
+                      i === 3
+                        ? "clamp(14px, 2vw, 16px)"
+                        : "clamp(15px, 2.5vw, 18px)",
+                    color:
+                      i === 3
+                        ? "var(--muted)"
+                        : i < 3
+                          ? "var(--white)"
+                          : "var(--muted)",
+                    lineHeight: 1.7,
+                    marginBottom: i < 2 ? 2 : i === 2 ? 20 : 0,
+                    fontWeight: i < 3 ? 600 : 400,
+                    letterSpacing: i < 3 ? "-.01em" : "normal",
+                  }}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+
+            {/* CTA Buttons */}
             <div
-              className="hero-btns fade-up delay-3"
+              className="hero-btns fade-up delay-6"
               style={{
                 display: "flex",
                 gap: 16,
                 justifyContent: "center",
                 flexWrap: "wrap",
+                marginBottom: 80,
               }}
             >
               <a
-                href="/quiz"
+                href="#calculator"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -685,10 +801,6 @@ export default function SmokeTracker() {
                   letterSpacing: "-.01em",
                   boxShadow: "0 0 40px rgba(255,92,26,.35)",
                   transition: "transform .2s, box-shadow .2s",
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.assign("/quiz");
                 }}
               >
                 {t.cta} →
@@ -711,17 +823,17 @@ export default function SmokeTracker() {
                   transition: "border-color .2s",
                 }}
               >
-                {isHU ? "Vegyi anyagok" : "See Chemicals"}
+                {t.chemBtn}
               </a>
             </div>
-            {/* Floating stats strip */}
+
+            {/* Stats strip */}
             <div
-              className="stats-strip fade-up delay-5"
+              className="stats-strip fade-up delay-8"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
                 gap: 1,
-                marginTop: 80,
                 background: "var(--border)",
                 borderRadius: 20,
                 overflow: "hidden",
@@ -1654,7 +1766,6 @@ export default function SmokeTracker() {
         {modalOpen &&
           selectedChem &&
           (() => {
-            // Type guard: ensure selectedChem is a valid ChemicalName
             if (!Object.keys(CHEMICALS).includes(selectedChem)) return null;
             const chemKey = selectedChem as ChemicalName;
             const chemData = CHEMICALS[chemKey];
