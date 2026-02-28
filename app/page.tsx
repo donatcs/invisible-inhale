@@ -252,6 +252,226 @@ const FontLink = () => (
       letter-spacing: .01em;
     }
 
+    /* ── Light mode overrides ───────────────── */
+    .light-mode {
+      --black:   #f5f0eb;
+      --surface: #ede8e0;
+      --card:    rgba(0,0,0,0.04);
+      --border:  rgba(0,0,0,0.1);
+      --white:   #1a1612;
+      --muted:   rgba(26,22,18,0.5);
+    }
+    .light-mode body { background: #f5f0eb; color: #1a1612; }
+    .light-mode ::-webkit-scrollbar-track { background: #f5f0eb; }
+
+    /* Cards & surfaces */
+    .light-mode .glass {
+      background: rgba(255,255,255,0.75) !important;
+      border-color: rgba(0,0,0,0.08) !important;
+    }
+    .light-mode .stat-card {
+      background: rgba(255,255,255,0.75) !important;
+      border-color: rgba(0,0,0,0.08) !important;
+    }
+    .light-mode .modal-box {
+      background: #fff !important;
+      border-color: rgba(255,92,26,.3) !important;
+    }
+
+    /* Nav */
+    .light-mode nav {
+      background: rgba(245,240,235,.9) !important;
+      border-bottom-color: rgba(0,0,0,0.08) !important;
+    }
+    .light-mode .theme-btn {
+      background: rgba(0,0,0,.05) !important;
+      border-color: rgba(0,0,0,.12) !important;
+    }
+
+    /* Hero grid & vignette */
+    .light-mode .hero-grid {
+      background-image:
+        linear-gradient(rgba(0,0,0,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,.06) 1px, transparent 1px) !important;
+    }
+    .light-mode .hero-vignette {
+      background: radial-gradient(ellipse at center, transparent 30%, #f5f0eb 100%) !important;
+    }
+
+    /* Stats strip */
+    .light-mode .stats-strip-inner {
+      background: #e8e2d8 !important;
+    }
+
+    /* Stat card hover text */
+    .light-mode .stat-hover-hint {
+      color: rgba(26,22,18,.3) !important;
+    }
+
+    /* Chart axes */
+    .light-mode .recharts-cartesian-axis line,
+    .light-mode .recharts-cartesian-axis-tick-value {
+      stroke: rgba(0,0,0,.2) !important;
+      fill: rgba(0,0,0,.4) !important;
+    }
+
+    /* Table */
+    .light-mode .chem-table-header {
+      background: rgba(0,0,0,.03) !important;
+      border-bottom-color: rgba(0,0,0,.08) !important;
+    }
+    .light-mode .chem-row:hover { background: rgba(0,0,0,.02) !important; }
+    .light-mode .chem-details-btn {
+      background: rgba(0,0,0,.05) !important;
+      border-color: rgba(0,0,0,.1) !important;
+      color: #1a1612 !important;
+    }
+    .light-mode .chem-details-btn:hover { background: rgba(255,92,26,.12) !important; }
+
+    /* Source note box */
+    .light-mode .source-note {
+      background: rgba(255,179,71,.08) !important;
+      color: rgba(180,120,0,.9) !important;
+    }
+
+    /* Methodology source blocks */
+    .light-mode .source-block {
+      background: rgba(0,0,0,.05) !important;
+    }
+
+    /* Action links */
+    .light-mode .action-link {
+      border-bottom-color: rgba(0,0,0,.06) !important;
+      color: #1a1612 !important;
+    }
+
+    /* Footer */
+    .light-mode .footer-copyright {
+      color: rgba(26,22,18,.3) !important;
+    }
+
+    /* Modal close & source buttons */
+    .light-mode .modal-close-btn {
+      background: rgba(0,0,0,.05) !important;
+      color: #1a1612 !important;
+    }
+    .light-mode .modal-source-link {
+      background: rgba(0,0,0,.05) !important;
+      border-color: rgba(0,0,0,.1) !important;
+    }
+
+    /* Input range track */
+    .light-mode input[type=range] {
+      background: rgba(0,0,0,.12) !important;
+    }
+
+    /* ── Nav links ──────────────────────────── */
+    .nav-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      background: transparent;
+      border: none; cursor: pointer;
+      font-family: var(--sans);
+      letter-spacing: -.01em;
+      transition: color .2s, background .2s;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: var(--white); background: rgba(255,255,255,.06); }
+    .nav-link.active { color: var(--orange); }
+    .nav-link.cta-link {
+      background: var(--orange);
+      color: #fff !important;
+      padding: 6px 16px;
+      border-radius: 100px;
+    }
+    .nav-link.cta-link:hover {
+      background: #ff7a40;
+      box-shadow: 0 0 20px rgba(255,92,26,.3);
+    }
+    .nav-divider {
+      width: 1px; height: 18px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ── Hamburger ──────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column; gap: 5px;
+      width: 36px; height: 36px;
+      align-items: center; justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer;
+    }
+    .hamburger span {
+      display: block; width: 16px; height: 2px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: transform .2s, opacity .2s;
+    }
+
+    /* ── Mobile menu ────────────────────────── */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 64px; left: 0; right: 0;
+      background: rgba(6,6,10,.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 24px;
+      z-index: 99;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu .nav-link {
+      padding: 12px 14px;
+      font-size: 15px;
+      border-radius: 10px;
+    }
+    .mobile-menu .nav-link.cta-link {
+      margin-top: 8px;
+      text-align: center;
+      justify-content: center;
+      border-radius: 100px;
+      padding: 12px;
+    }
+    .mobile-menu-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none !important; }
+      .hamburger { display: flex !important; }
+    }
+
+    /* ── Light mode nav ─────────────────────── */
+    .light-mode .nav-link:hover { background: rgba(0,0,0,.05); }
+    .light-mode .mobile-menu { background: rgba(245,240,235,.97); }
+
+    /* ── Theme toggle button ────────────────── */
+    .theme-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      transition: background .2s, border-color .2s;
+    }
+    .theme-btn:hover { background: rgba(255,92,26,.15); border-color: rgba(255,92,26,.4); }
+
     /* ── Scrollbar ──────────────────────────── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--black); }
@@ -396,6 +616,8 @@ const TOXICITY_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function SmokeTracker() {
+  const [isDark, setIsDark] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [locale, setLocale] = useState("US");
   const [years, setYears] = useState(25);
   const [cigsPerDay, setCigsPerDay] = useState(1.5);
@@ -489,11 +711,13 @@ export default function SmokeTracker() {
       <FontLink />
 
       <div
+        className={!isDark ? "light-mode" : ""}
         style={{
           background: "var(--black)",
           minHeight: "100vh",
           fontFamily: "var(--sans)",
           overflow: "hidden",
+          transition: "background .3s, color .3s",
         }}
       >
         {/* ── NAV ─────────────────────────────────────────────────── */}
@@ -520,12 +744,14 @@ export default function SmokeTracker() {
               height: 64,
             }}
           >
+            {/* ── Logo ── */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
                 style={{
                   width: 32,
                   height: 32,
                   borderRadius: 10,
+                  flexShrink: 0,
                   background: "linear-gradient(135deg, var(--orange), #ff9f50)",
                   display: "flex",
                   alignItems: "center",
@@ -540,37 +766,203 @@ export default function SmokeTracker() {
                   fontWeight: 800,
                   fontSize: 16,
                   letterSpacing: "-.02em",
+                  cursor: "pointer",
                 }}
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                invisible<span style={{ color: "var(--orange)" }}>inhale</span>
+                <span style={{ color: "var(--white)" }}>invisible</span>
+                <span style={{ color: "var(--orange)" }}>inhale</span>
               </span>
             </div>
+
+            {/* ── Center nav links (desktop) ── */}
             <div
-              style={{
-                display: "flex",
-                gap: 6,
-                background: "rgba(255,255,255,.05)",
-                borderRadius: 12,
-                padding: 4,
-              }}
+              className="nav-links"
+              style={{ display: "flex", alignItems: "center", gap: 2 }}
             >
-              {["US", "HU"].map((l) => (
-                <button
-                  key={l}
-                  className="locale-btn"
-                  onClick={() => setLocale(l)}
+              {[
+                {
+                  label: isHU ? "Kalkulátor" : "Calculator",
+                  href: "#calculator",
+                },
+                {
+                  label: isHU ? "Vegyi anyagok" : "Chemicals",
+                  href: "#chemicals",
+                },
+                { label: isHU ? "Hírek" : "News", href: "/news", soon: true },
+                {
+                  label: isHU ? "Szabályozások" : "Regulations",
+                  href: "/regulations",
+                  soon: true,
+                },
+                {
+                  label: isHU ? "Kutatás" : "Research",
+                  href: "/research",
+                  soon: true,
+                },
+              ].map(({ label, href, soon }) => (
+                <a
+                  key={label}
+                  href={soon ? undefined : href}
+                  className="nav-link"
                   style={{
-                    background: locale === l ? "var(--orange)" : "transparent",
-                    color: locale === l ? "#fff" : "var(--muted)",
-                    border: "none",
+                    position: "relative",
+                    cursor: soon ? "default" : "pointer",
+                    opacity: soon ? 0.5 : 1,
                   }}
+                  onClick={soon ? (e) => e.preventDefault() : undefined}
                 >
-                  {l === "US" ? "🇺🇸 EN" : "🇭🇺 HU"}
-                </button>
+                  {label}
+                  {soon && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontFamily: "var(--mono)",
+                        fontWeight: 700,
+                        letterSpacing: ".08em",
+                        color: "var(--orange)",
+                        background: "rgba(255,92,26,.12)",
+                        border: "1px solid rgba(255,92,26,.25)",
+                        borderRadius: 4,
+                        padding: "1px 5px",
+                        marginLeft: 4,
+                      }}
+                    >
+                      SOON
+                    </span>
+                  )}
+                </a>
               ))}
+
+              <div className="nav-divider" style={{ margin: "0 6px" }} />
+
+              <a href="/quiz" className="nav-link cta-link">
+                {isHU ? "Kvíz →" : "Quiz →"}
+              </a>
+            </div>
+
+            {/* ── Right controls ── */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Theme toggle */}
+              {/*               <button
+                className="theme-btn"
+                onClick={() => setIsDark(!isDark)}
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? "☀️" : "🌙"}
+              </button> */}
+
+              {/* Language toggle */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  background: "rgba(255,255,255,.05)",
+                  borderRadius: 12,
+                  padding: 4,
+                }}
+              >
+                {["US", "HU"].map((l) => (
+                  <button
+                    key={l}
+                    className="locale-btn"
+                    onClick={() => setLocale(l)}
+                    style={{
+                      background:
+                        locale === l ? "var(--orange)" : "transparent",
+                      color: locale === l ? "#fff" : "var(--muted)",
+                      border: "none",
+                    }}
+                  >
+                    {l === "US" ? "🇺🇸 EN" : "🇭🇺 HU"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Hamburger (mobile) */}
+              <button
+                className="hamburger"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Toggle menu"
+              >
+                <span
+                  style={{
+                    transform: menuOpen
+                      ? "rotate(45deg) translate(5px, 5px)"
+                      : "none",
+                  }}
+                />
+                <span style={{ opacity: menuOpen ? 0 : 1 }} />
+                <span
+                  style={{
+                    transform: menuOpen
+                      ? "rotate(-45deg) translate(5px, -5px)"
+                      : "none",
+                  }}
+                />
+              </button>
             </div>
           </div>
         </nav>
+
+        {/* ── MOBILE MENU ─────────────────────────────────────────── */}
+        <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
+          {[
+            { label: isHU ? "Kalkulátor" : "Calculator", href: "#calculator" },
+            { label: isHU ? "Vegyi anyagok" : "Chemicals", href: "#chemicals" },
+            { label: isHU ? "Hírek" : "News", href: "/news", soon: true },
+            {
+              label: isHU ? "Szabályozások" : "Regulations",
+              href: "/regulations",
+              soon: true,
+            },
+            {
+              label: isHU ? "Kutatás" : "Research",
+              href: "/research",
+              soon: true,
+            },
+          ].map(({ label, href, soon }) => (
+            <a
+              key={label}
+              href={soon ? undefined : href}
+              className="nav-link"
+              style={{
+                opacity: soon ? 0.5 : 1,
+                cursor: soon ? "default" : "pointer",
+              }}
+              onClick={(e) => {
+                if (soon) e.preventDefault();
+                else setMenuOpen(false);
+              }}
+            >
+              {label}
+              {soon && (
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontFamily: "var(--mono)",
+                    fontWeight: 700,
+                    color: "var(--orange)",
+                    background: "rgba(255,92,26,.12)",
+                    border: "1px solid rgba(255,92,26,.25)",
+                    borderRadius: 4,
+                    padding: "1px 5px",
+                    marginLeft: 4,
+                  }}
+                >
+                  SOON
+                </span>
+              )}
+            </a>
+          ))}
+          <a
+            href="/quiz"
+            className="nav-link cta-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            {isHU ? "Kvíz →" : "Quiz →"}
+          </a>
+        </div>
 
         {/* ── HERO ────────────────────────────────────────────────── */}
         <section
@@ -598,6 +990,7 @@ export default function SmokeTracker() {
             }}
           >
             <div
+              className="hero-grid"
               style={{
                 position: "absolute",
                 inset: 0,
@@ -652,6 +1045,7 @@ export default function SmokeTracker() {
               }}
             />
             <div
+              className="hero-vignette"
               style={{
                 position: "absolute",
                 inset: 0,
@@ -687,6 +1081,7 @@ export default function SmokeTracker() {
                 lineHeight: 1.0,
                 letterSpacing: "-.04em",
                 marginBottom: 0,
+                color: "var(--white)",
               }}
             >
               <span
@@ -932,6 +1327,7 @@ export default function SmokeTracker() {
 
             {/* Source note */}
             <div
+              className="source-note"
               style={{
                 background: "rgba(255,179,71,.06)",
                 border: "1px solid rgba(255,179,71,.2)",
@@ -1136,6 +1532,7 @@ export default function SmokeTracker() {
                     {value}
                   </div>
                   <div
+                    className="stat-hover-hint"
                     style={{
                       fontSize: 10,
                       color: "rgba(255,255,255,.2)",
@@ -1354,6 +1751,7 @@ export default function SmokeTracker() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr
+                    className="chem-table-header"
                     style={{
                       background: "rgba(255,255,255,.03)",
                       borderBottom: "1px solid var(--border)",
@@ -1457,6 +1855,7 @@ export default function SmokeTracker() {
                       </td>
                       <td style={{ padding: "20px", textAlign: "right" }}>
                         <button
+                          className="chem-details-btn"
                           onClick={() => openModal(name)}
                           style={{
                             background: "rgba(255,255,255,.05)",
@@ -1617,6 +2016,7 @@ export default function SmokeTracker() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="action-link"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1681,6 +2081,7 @@ export default function SmokeTracker() {
                 ].map(({ code, text }) => (
                   <div
                     key={code}
+                    className="source-block"
                     style={{
                       background: "rgba(0,0,0,.4)",
                       borderRadius: 10,
@@ -1734,7 +2135,8 @@ export default function SmokeTracker() {
                 💨
               </div>
               <span style={{ fontWeight: 800, fontSize: 15 }}>
-                invisible<span style={{ color: "var(--orange)" }}>inhale</span>
+                <span style={{ color: "var(--white)" }}>invisible</span>
+                <span style={{ color: "var(--orange)" }}>inhale</span>
               </span>
             </div>
             <p
@@ -1750,6 +2152,7 @@ export default function SmokeTracker() {
               {t.disclaimer}
             </p>
             <p
+              className="footer-copyright"
               style={{
                 color: "rgba(255,255,255,.15)",
                 fontSize: 11,
@@ -1779,6 +2182,7 @@ export default function SmokeTracker() {
               >
                 <div className="modal-box">
                   <button
+                    className="modal-close-btn"
                     onClick={() => setModalOpen(false)}
                     style={{
                       position: "absolute",
@@ -1885,6 +2289,7 @@ export default function SmokeTracker() {
                     href={chemData.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="modal-source-link"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
