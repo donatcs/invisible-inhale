@@ -252,61 +252,94 @@ const FontLink = () => (
 // ─── Chemical details data ────────────────────────────────────────────────────
 type ChemicalName = keyof typeof CHEMICALS_RAW;
 type ChemicalData = {
-  use: string;
-  toxicity: string;
+  use: { EN: string; HU: string };
+  toxicity: { EN: string; HU: string };
   level: 1 | 2 | 3 | 4 | 5;
-  healthEffects: string;
-  source: string;
+  healthEffects: { EN: string; HU: string };
+  source: { EN: string; HU: string };
   sourceUrl: string;
-  prevention: string;
+  prevention: { EN: string; HU: string };
 };
 
 const CHEMICALS_RAW = {
   Formaldehyde: {
-    use: "Embalming fluid",
-    toxicity: "Carcinogen",
+    use: { EN: "Embalming fluid", HU: "Balzsamozó folyadék" },
+    toxicity: { EN: "Carcinogen", HU: "Rákkeltő" },
     level: 2,
-    healthEffects: "Eye, nose, and throat irritation; increased cancer risk.",
-    source: "CDC",
+    healthEffects: {
+      EN: "Eye, nose, and throat irritation; increased cancer risk.",
+      HU: "Szem-, orr- és torokirritáció; fokozott rákkockázat.",
+    },
+    source: { EN: "CDC", HU: "CDC" },
     sourceUrl: "https://www.cdc.gov/formaldehyde/",
-    prevention: "Avoid exposure, ventilate spaces, use air purifiers.",
+    prevention: {
+      EN: "Avoid exposure, ventilate spaces, use air purifiers.",
+      HU: "Kerülje az expozíciót, szellőztessen, használjon légtisztítót.",
+    },
   },
   Benzene: {
-    use: "Gasoline additive",
-    toxicity: "High",
+    use: { EN: "Gasoline additive", HU: "Benzin adalék" },
+    toxicity: { EN: "High", HU: "Magas" },
     level: 3,
-    healthEffects: "Blood disorders, leukemia, immune system damage.",
-    source: "CDC/NIOSH",
+    healthEffects: {
+      EN: "Blood disorders, leukemia, immune system damage.",
+      HU: "Vérbetegségek, leukémia, immunrendszer károsodása.",
+    },
+    source: { EN: "CDC/NIOSH", HU: "CDC/NIOSH" },
     sourceUrl: "https://www.cdc.gov/niosh/topics/benzene/",
-    prevention: "Avoid smoke, use protective equipment in workplaces.",
+    prevention: {
+      EN: "Avoid smoke, use protective equipment in workplaces.",
+      HU: "Kerülje a füstöt, használjon védőfelszerelést munkahelyeken.",
+    },
   },
   Arsenic: {
-    use: "Rat poison",
-    toxicity: "Lethal",
+    use: { EN: "Rat poison", HU: "Patkányméreg" },
+    toxicity: { EN: "Lethal", HU: "Halálos" },
     level: 4,
-    healthEffects: "Skin lesions, cancer, cardiovascular disease.",
-    source: "WHO",
+    healthEffects: {
+      EN: "Skin lesions, cancer, cardiovascular disease.",
+      HU: "Bőrelváltozások, rák, szív- és érrendszeri betegségek.",
+    },
+    source: { EN: "WHO", HU: "WHO" },
     sourceUrl: "https://www.who.int/news-room/fact-sheets/detail/arsenic",
-    prevention: "Avoid contaminated sources, ensure clean water.",
+    prevention: {
+      EN: "Avoid contaminated sources, ensure clean water.",
+      HU: "Kerülje a szennyezett forrásokat, biztosítson tiszta vizet.",
+    },
   },
   Ammonia: {
-    use: "Toilet cleaner",
-    toxicity: "Irritant",
+    use: { EN: "Toilet cleaner", HU: "WC tisztító" },
+    toxicity: { EN: "Irritant", HU: "Irritáló" },
     level: 1,
-    healthEffects: "Respiratory irritation, coughing, asthma aggravation.",
-    source: "CDC/NIOSH",
+    healthEffects: {
+      EN: "Respiratory irritation, coughing, asthma aggravation.",
+      HU: "Légúti irritáció, köhögés, asztma súlyosbodása.",
+    },
+    source: { EN: "CDC/NIOSH", HU: "CDC/NIOSH" },
     sourceUrl: "https://www.cdc.gov/niosh/topics/ammonia/",
-    prevention: "Ventilate, avoid mixing with bleach, minimize exposure.",
+    prevention: {
+      EN: "Ventilate, avoid mixing with bleach, minimize exposure.",
+      HU: "Szellőztessen, ne keverje hipóval, minimalizálja az expozíciót.",
+    },
   },
   "Polonium-210": {
-    use: "Radioactive element",
-    toxicity: "Radioactive",
+    use: { EN: "Radioactive element", HU: "Radioaktív elem" },
+    toxicity: { EN: "Radioactive", HU: "Radioaktív" },
     level: 5,
-    healthEffects: "Radiation poisoning, lung cancer risk.",
-    source: "American Cancer Society",
+    healthEffects: {
+      EN: "Radiation poisoning, lung cancer risk.",
+      HU: "Sugárfertőzés, tüdőrák kockázata.",
+    },
+    source: {
+      EN: "American Cancer Society",
+      HU: "Amerikai Rákkutató Társaság",
+    },
     sourceUrl:
       "https://www.cancer.org/cancer/risk-prevention/tobacco/secondhand-smoke.html",
-    prevention: "Avoid tobacco smoke, support smoke-free policies.",
+    prevention: {
+      EN: "Avoid tobacco smoke, support smoke-free policies.",
+      HU: "Kerülje a dohányfüstöt, támogassa a füstmentes szabályokat.",
+    },
   },
 } as const;
 
@@ -1288,7 +1321,7 @@ export default function SmokeTracker() {
                           color: "var(--muted)",
                         }}
                       >
-                        {data.use}
+                        {isHU ? data.use.HU : data.use.EN}
                       </td>
                       <td style={{ padding: "20px", textAlign: "center" }}>
                         <span
@@ -1307,7 +1340,7 @@ export default function SmokeTracker() {
                             border: `1px solid ${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}40`,
                           }}
                         >
-                          {data.toxicity}
+                          {isHU ? data.toxicity.HU : data.toxicity.EN}
                         </span>
                       </td>
                       <td style={{ padding: "20px", textAlign: "right" }}>
@@ -1696,7 +1729,7 @@ export default function SmokeTracker() {
                         border: `1px solid ${color}40`,
                       }}
                     >
-                      {chemData.toxicity}
+                      {isHU ? chemData.toxicity.HU : chemData.toxicity.EN}
                     </span>
                   </div>
 
@@ -1732,7 +1765,7 @@ export default function SmokeTracker() {
                           lineHeight: 1.7,
                         }}
                       >
-                        {val}
+                        {isHU ? val.HU : val.EN}
                       </div>
                     </div>
                   ))}
@@ -1755,7 +1788,7 @@ export default function SmokeTracker() {
                       fontSize: 12,
                     }}
                   >
-                    → {chemData.source}
+                    → {isHU ? chemData.source.HU : chemData.source.EN}
                   </a>
                 </div>
               </div>
