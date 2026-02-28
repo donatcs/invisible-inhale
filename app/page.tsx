@@ -322,7 +322,7 @@ const TOXICITY_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function SmokeTracker() {
-  const [locale, setLocale] = useState("US");
+  const [locale, setLocale] = useState("HU");
   const [years, setYears] = useState(25);
   const [cigsPerDay, setCigsPerDay] = useState(1.5);
   const [smokers, setSmokers] = useState(1);
@@ -404,7 +404,20 @@ export default function SmokeTracker() {
         }}
       >
         {/* ── NAV ─────────────────────────────────────────────────── */}
-        <nav className="nav-inner">
+        <nav
+          className="nav-inner"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: "rgba(6,6,10,.8)",
+            backdropFilter: "blur(20px)",
+            borderBottom: "1px solid var(--border)",
+            padding: "0 24px",
+          }}
+        >
           <div
             className="container"
             style={{
@@ -624,7 +637,7 @@ export default function SmokeTracker() {
               }}
             >
               <a
-                href="#calculator"
+                href="/quiz"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -640,15 +653,9 @@ export default function SmokeTracker() {
                   boxShadow: "0 0 40px rgba(255,92,26,.35)",
                   transition: "transform .2s, box-shadow .2s",
                 }}
-                onMouseOver={(e) => {
-                  const target = e.target as HTMLElement;
-                  target.style.transform = "translateY(-2px)";
-                  target.style.boxShadow = "0 0 60px rgba(255,92,26,.5)";
-                }}
-                onMouseOut={(e) => {
-                  const target = e.target as HTMLElement;
-                  target.style.transform = "translateY(0)";
-                  target.style.boxShadow = "0 0 40px rgba(255,92,26,.35)";
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.assign("/quiz");
                 }}
               >
                 {t.cta} →
@@ -792,10 +799,9 @@ export default function SmokeTracker() {
                 lineHeight: 1.6,
               }}
             >
-              📊{" "}
               {isHU
-                ? "Modell: napi 1,5 passzív cigaretta (2006 Surgeon General Report & IARC Monograph Vol. 83). Egy cigaretta >7 000 vegyi anyagot tartalmaz."
-                : "Model: 1.5 cigarettes/day passive exposure (2006 Surgeon General Report & IARC Monograph Vol. 83). Each cigarette contains 7,000+ chemicals."}
+                ? "Modell: napi 1,5 passzív cigaretta (2006 Surgeon General Report & IARC Monograph Vol. 83). Egy cigaretta >7 000 vegyi anyagot tartalmaz. 1 db. cigaretta ára: ~120 Ft (Magyarországon)."
+                : "Model: 1.5 cigarettes/day passive exposure (2006 Surgeon General Report & IARC Monograph Vol. 83). Each cigarette contains 7,000+ chemicals. Cost per cigarette: ~$0.50 (in the US)."}
             </div>
 
             {/* Controls grid */}
