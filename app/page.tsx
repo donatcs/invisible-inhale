@@ -218,10 +218,33 @@ const FontLink = () => (
     ::-webkit-scrollbar-thumb { background: rgba(255,92,26,.4); border-radius: 3px; }
 
     /* ── Responsive ─────────────────────────── */
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .stats-strip { grid-template-columns: repeat(3, 1fr); }
+    .hero-btns { flex-direction: row; }
+    .chem-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chem-use-col { display: table-cell; }
+    .nav-logo-text { display: inline; }
+
     @media (max-width: 768px) {
-      .hero-title { font-size: clamp(36px, 10vw, 80px) !important; }
       .grid-3 { grid-template-columns: 1fr !important; }
       .grid-2 { grid-template-columns: 1fr !important; }
+      .stats-strip { grid-template-columns: 1fr !important; }
+      .hero-btns { flex-direction: column !important; align-items: stretch !important; }
+      .hero-btns a { text-align: center !important; justify-content: center !important; }
+      .chem-use-col { display: none !important; }
+      .section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+      .calc-glass { padding: 20px !important; }
+      .modal-box { padding: 24px !important; margin: 16px !important; }
+      .timeline-grid { grid-template-columns: 1fr !important; }
+      .action-grid { grid-template-columns: 1fr !important; }
+      .stat-card { padding: 20px !important; }
+      .nav-inner { padding: 0 16px !important; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-strip > div { padding: 20px 12px !important; }
+      .stats-strip > div > div:first-child { font-size: 28px !important; }
     }
   `}</style>
 );
@@ -381,19 +404,7 @@ export default function SmokeTracker() {
         }}
       >
         {/* ── NAV ─────────────────────────────────────────────────── */}
-        <nav
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: "rgba(6,6,10,.8)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid var(--border)",
-            padding: "0 24px",
-          }}
-        >
+        <nav className="nav-inner">
           <div
             className="container"
             style={{
@@ -428,7 +439,6 @@ export default function SmokeTracker() {
                 invisible<span style={{ color: "var(--orange)" }}>inhale</span>
               </span>
             </div>
-
             <div
               style={{
                 display: "flex",
@@ -459,6 +469,7 @@ export default function SmokeTracker() {
         {/* ── HERO ────────────────────────────────────────────────── */}
         <section
           ref={heroRef}
+          className="section-pad"
           style={{
             position: "relative",
             minHeight: "100vh",
@@ -467,7 +478,7 @@ export default function SmokeTracker() {
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            padding: "120px 24px 80px",
+            padding: "120px 5vw 80px",
             overflow: "hidden",
           }}
         >
@@ -552,7 +563,8 @@ export default function SmokeTracker() {
             style={{
               position: "relative",
               zIndex: 1,
-              maxWidth: 820,
+              maxWidth: "100%",
+              width: "820px",
               margin: "0 auto",
             }}
           >
@@ -568,7 +580,7 @@ export default function SmokeTracker() {
             <h1
               className="hero-title fade-up delay-1"
               style={{
-                fontSize: "clamp(56px, 9vw, 110px)",
+                fontSize: "clamp(36px, 9vw, 110px)",
                 fontWeight: 800,
                 lineHeight: 1.0,
                 letterSpacing: "-.04em",
@@ -590,22 +602,20 @@ export default function SmokeTracker() {
                 {t.hero2}
               </span>
             </h1>
-
             <p
               className="fade-up delay-2"
               style={{
-                fontSize: "clamp(16px, 2vw, 20px)",
+                fontSize: "clamp(16px, 4vw, 20px)",
                 color: "var(--muted)",
                 lineHeight: 1.7,
-                maxWidth: 560,
+                maxWidth: "95vw",
                 margin: "0 auto 48px",
               }}
             >
               {t.heroSub}
             </p>
-
             <div
-              className="fade-up delay-3"
+              className="hero-btns fade-up delay-3"
               style={{
                 display: "flex",
                 gap: 16,
@@ -664,10 +674,9 @@ export default function SmokeTracker() {
                 {isHU ? "Vegyi anyagok" : "See Chemicals"}
               </a>
             </div>
-
             {/* Floating stats strip */}
             <div
-              className="fade-up delay-5"
+              className="stats-strip fade-up delay-5"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
@@ -732,32 +741,11 @@ export default function SmokeTracker() {
           </div>
         </section>
 
-        {/* ── TICKER ──────────────────────────────────────────────── */}
-        <div
-          className="ticker-wrap"
-          style={{ position: "relative", zIndex: 2 }}
-        >
-          <div
-            className="ticker-inner"
-            style={{
-              fontFamily: "var(--mono)",
-              fontSize: 12,
-              color: "var(--muted)",
-              letterSpacing: ".15em",
-            }}
-          >
-            {Array(4)
-              .fill(
-                "● FORMALDEHYDE ● BENZENE ● ARSENIC ● AMMONIA ● POLONIUM-210 ● HYDROGEN CYANIDE ● LEAD ● CHROMIUM ● NITROSAMINES ● ACROLEIN ● 1,3-BUTADIENE ",
-              )
-              .join(" ")}
-          </div>
-        </div>
-
         {/* ── CALCULATOR ──────────────────────────────────────────── */}
         <section
           id="calculator"
-          style={{ padding: "100px 24px", position: "relative" }}
+          className="section-pad"
+          style={{ padding: "100px 5vw", position: "relative" }}
         >
           <div className="container">
             <div style={{ marginBottom: 56, textAlign: "center" }}>
@@ -812,7 +800,7 @@ export default function SmokeTracker() {
 
             {/* Controls grid */}
             <div
-              className="glass"
+              className="glass calc-glass"
               style={{ padding: "36px", marginBottom: 24 }}
             >
               <div
