@@ -164,7 +164,7 @@ export default function ShareModal({
             width: 32,
             height: 32,
             cursor: "pointer",
-            color: "var(--white)",
+            color: "var(--color)",
             fontSize: 18,
             display: "flex",
             alignItems: "center",
@@ -284,7 +284,7 @@ export default function ShareModal({
               background: isCapturing
                 ? "rgba(255,255,255,.04)"
                 : "var(--orange)",
-              color: isCapturing ? "var(--muted)" : "#fff",
+              color: isCapturing ? "var(--muted)" : "var(--color)",
               opacity: isCapturing ? 0.7 : 1,
               flexDirection: "column",
               padding: "14px 12px",
@@ -311,7 +311,7 @@ export default function ShareModal({
               ...buttonBase,
               background: "rgba(255,255,255,.05)",
               border: "1px solid rgba(255,255,255,.1)",
-              color: "var(--white)",
+              color: "var(--color)",
               flexDirection: "column",
               padding: "14px 12px",
               gap: 6,
@@ -330,7 +330,7 @@ export default function ShareModal({
               ...buttonBase,
               background: "rgba(0,0,0,.6)",
               border: "1px solid rgba(255,255,255,.12)",
-              color: "var(--white)",
+              color: "var(--color)",
               flexDirection: "column",
               padding: "14px 12px",
               gap: 6,
@@ -368,7 +368,8 @@ export default function ShareModal({
         <p
           style={{
             fontSize: 11,
-            color: "rgba(245,243,238,.2)",
+            color: "var(--color)",
+            opacity: 0.2,
             fontFamily: "var(--mono)",
             marginTop: 16,
             textAlign: "center",

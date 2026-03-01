@@ -399,16 +399,6 @@ export default function QuizPage() {
     };
   };
 
-  useEffect(() => {
-    // Only update locale after mount to avoid hydration mismatch
-    if (typeof window !== "undefined") {
-      const storedLocale = window.localStorage.getItem("locale");
-      if (storedLocale === "HU" || storedLocale === "EN") {
-        setLocale(storedLocale);
-      }
-    }
-  }, []);
-
   const q = questions[current];
   const progress = (current / questions.length) * 100;
   const isCorrect = selected === q.answer;
@@ -583,7 +573,7 @@ export default function QuizPage() {
             </span>
           </a>
           <div style={{ display: "flex", gap: 8 }}>
-            <button
+            {/*             <button
               className="locale-btn"
               style={{
                 background: locale === "EN" ? "var(--orange)" : "transparent",
@@ -608,7 +598,7 @@ export default function QuizPage() {
               }}
             >
               HU
-            </button>
+            </button> */}
           </div>
           <a href="/" className="back-btn">
             ← {locale === "HU" ? "Vissza a kezdőlapra" : "Back to Home"}

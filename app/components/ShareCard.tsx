@@ -10,7 +10,7 @@ interface ShareCardProps {
 }
 
 // This component is rendered off-screen and captured by html2canvas.
-// Designed at 600×315px (2× = 1200×630 OG ratio). All styles inline — no CSS vars,
+// Designed at 600×315px (2× = 1200×630 OG ratio). All styles inline,
 // no external fonts loaded at capture time. Uses system-safe font stack.
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   ({ result, years, cigsPerDay, isHU }, ref) => {
@@ -52,9 +52,11 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
       <div
         ref={ref}
         style={{
+          ["--color" as any]: "#f5f3ee",
           width: 600,
           height: 315,
           background: "#06060a",
+          color: "var(--color)",
           borderRadius: 16,
           overflow: "hidden",
           position: "relative",
@@ -144,7 +146,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                   letterSpacing: "-.02em",
                 }}
               >
-                <span style={{ color: "#f5f3ee" }}>invisible</span>
+                <span style={{ color: "var(--color)" }}>invisible</span>
                 <span style={{ color: "#ff5c1a" }}>inhale</span>
               </span>
             </div>
@@ -200,7 +202,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 style={{
                   fontSize: 9,
                   fontWeight: 600,
-                  color: "rgba(245,243,238,.4)",
+                  color: "var(--color)",
+                  opacity: 0.4,
                   letterSpacing: ".12em",
                   textTransform: "uppercase",
                   marginBottom: 4,
@@ -223,7 +226,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <span
                   style={{
                     fontSize: 11,
-                    color: "rgba(245,243,238,.4)",
+                    color: "var(--color)",
+                    opacity: 0.4,
                     fontWeight: 400,
                   }}
                 >
@@ -263,7 +267,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.35)",
+                    color: "var(--color)",
+                    opacity: 0.35,
                     letterSpacing: ".1em",
                     textTransform: "uppercase",
                     marginBottom: 4,
@@ -284,7 +289,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.3)",
+                    color: "var(--color)",
+                    opacity: 0.3,
                     marginTop: 2,
                   }}
                 >
@@ -304,7 +310,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.35)",
+                    color: "var(--color)",
+                    opacity: 0.35,
                     letterSpacing: ".1em",
                     textTransform: "uppercase",
                     marginBottom: 4,
@@ -325,7 +332,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.3)",
+                    color: "var(--color)",
+                    opacity: 0.3,
                     marginTop: 2,
                   }}
                 >
@@ -345,7 +353,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.35)",
+                    color: "var(--color)",
+                    opacity: 0.35,
                     letterSpacing: ".1em",
                     textTransform: "uppercase",
                     marginBottom: 4,
@@ -366,7 +375,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.3)",
+                    color: "var(--color)",
+                    opacity: 0.3,
                     marginTop: 2,
                   }}
                 >
@@ -386,7 +396,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.35)",
+                    color: "var(--color)",
+                    opacity: 0.35,
                     letterSpacing: ".1em",
                     textTransform: "uppercase",
                     marginBottom: 4,
@@ -407,7 +418,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <div
                   style={{
                     fontSize: 9,
-                    color: "rgba(245,243,238,.3)",
+                    color: "var(--color)",
+                    opacity: 0.3,
                     marginTop: 2,
                   }}
                 >
@@ -428,7 +440,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             <div
               style={{
                 fontSize: 10,
-                color: "rgba(245,243,238,.3)",
+                color: "var(--color)",
+                opacity: 0.3,
                 fontFamily: "'Courier New', monospace",
               }}
             >
@@ -439,7 +452,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             <div
               style={{
                 fontSize: 10,
-                color: "rgba(245,243,238,.25)",
+                color: "var(--color)",
+                opacity: 0.25,
                 fontFamily: "'Courier New', monospace",
                 letterSpacing: ".04em",
               }}
