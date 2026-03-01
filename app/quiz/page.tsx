@@ -3,25 +3,44 @@ import React, { useState, useEffect } from "react";
 
 const FontLink = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black:   #06060a;
-      --surface: #0e0e14;
-      --card:    rgba(255,255,255,0.035);
-      --border:  rgba(255,255,255,0.08);
-      --orange:  #ff5c1a;
-      --amber:   #ffb347;
-      --white:   #f5f3ee;
-      --muted:   rgba(245,243,238,0.45);
-      --mono:    'DM Mono', monospace;
-      --sans:    'Syne', sans-serif;
-      --serif:   'Instrument Serif', serif;
+      --bg:      #06090f;
+      --surface: #0d1324;
+      --card:    #111a2e;
+      --border:  rgba(255,255,255,.1);
+      --bord2:   rgba(255,255,255,.2);
+      --teal:    #1bf2c2;
+      --teal-d:  rgba(15,223,176,.08);
+      --amber:   #fb923c;
+      --danger:  #ef4444;
+      --red:     #f43f5e;
+      --white:   #f1f5f9;
+      --color:   #f1f5f9;
+      --muted:   rgba(241,245,249,.58);
+      --dim:     rgba(241,245,249,.34);
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'Outfit', sans-serif;
+      --serif:   'Outfit', sans-serif;
+      --black:   var(--bg);
+      --blue:    var(--teal);
+      --blue-hover: rgba(27,242,194,.12);
+      --orange:  var(--amber);
     }
 
-    html, body { background: var(--black); }
+    html, body { background: var(--bg); color: var(--color); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15,223,176,.04) 0%, transparent 70%);
+    }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(24px); }
@@ -38,12 +57,12 @@ const FontLink = () => (
       66%      { transform: translate(40px,-20px) scale(.92); }
     }
     @keyframes pulseDot {
-      0%,100% { box-shadow: 0 0 0 0 rgba(255,92,26,.5); }
-      50%      { box-shadow: 0 0 0 8px rgba(255,92,26,0); }
+      0%,100% { box-shadow: 0 0 0 0 rgba(56,189,248,.5); }
+      50%      { box-shadow: 0 0 0 8px rgba(56,189,248,0); }
     }
     @keyframes gridPulse {
-      0%,100% { opacity: .35; }
-      50%      { opacity: .6; }
+      0%,100% { opacity: .3; }
+      50%      { opacity: .55; }
     }
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(16px) scale(.98); }
@@ -76,13 +95,13 @@ const FontLink = () => (
     .option-btn {
       width: 100%;
       text-align: left;
-      padding: 16px 20px;
-      border-radius: 14px;
+      padding: 14px 16px;
+      border-radius: 8px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color: var(--white);
+      background: var(--card);
+      color: var(--color);
       font-family: var(--sans);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       transition: border-color .2s, background .2s, transform .15s;
@@ -93,9 +112,9 @@ const FontLink = () => (
       overflow: hidden;
     }
     .option-btn:not(:disabled):hover {
-      border-color: rgba(255,92,26,.4);
-      background: rgba(255,92,26,.07);
-      transform: translateX(4px);
+      border-color: var(--bord2);
+      background: rgba(15,223,176,.06);
+      transform: translateY(-1px);
     }
     .option-btn:disabled { cursor: default; }
     .option-btn.selected-correct {
@@ -114,30 +133,30 @@ const FontLink = () => (
 
     .next-btn {
       display: inline-flex; align-items: center; gap: 10px;
-      padding: 14px 28px; border-radius: 100px;
-      background: var(--orange);
-      color: #fff; font-weight: 700; font-size: 14px;
+      padding: 12px 22px; border-radius: 8px;
+      background: var(--teal);
+      color: var(--bg); font-weight: 700; font-size: 13px;
       border: none; cursor: pointer;
       font-family: var(--sans); letter-spacing: -.01em;
-      box-shadow: 0 0 32px rgba(255,92,26,.3);
-      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 24px rgba(15,223,176,.2);
+      transition: background .2s, box-shadow .2s;
     }
     .next-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 48px rgba(255,92,26,.5);
+      background: #34f5cd;
+      box-shadow: 0 0 30px rgba(15,223,176,.3);
     }
 
     .back-btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 20px; border-radius: 100px;
+      padding: 8px 14px; border-radius: 7px;
       background: transparent;
       border: 1px solid var(--border);
       color: var(--muted); font-family: var(--sans);
-      font-size: 13px; font-weight: 600;
+      font-size: 13px; font-weight: 500;
       cursor: pointer; text-decoration: none;
       transition: border-color .2s, color .2s;
     }
-    .back-btn:hover { border-color: rgba(255,92,26,.4); color: var(--white); }
+    .back-btn:hover { border-color: var(--bord2); color: var(--color); }
 
     .score-ring {
       animation: scoreReveal .6s cubic-bezier(.34,1.56,.64,1) both;
@@ -145,19 +164,23 @@ const FontLink = () => (
 
     .badge {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,92,26,.12);
-      border: 1px solid rgba(255,92,26,.3);
-      border-radius: 100px;
-      padding: 5px 14px;
-      font-size: 11px; font-weight: 600; letter-spacing: .12em;
-      color: var(--orange); text-transform: uppercase;
-      font-family: var(--sans);
+      background: var(--teal-d);
+      border: 1px solid rgba(15,223,176,.2);
+      border-radius: 5px;
+      padding: 4px 11px;
+      font-size: 10px; font-weight: 500; letter-spacing: .14em;
+      color: var(--teal); text-transform: uppercase;
+      font-family: var(--mono);
     }
     .badge-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--orange);
-      animation: pulseDot 2s infinite;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--teal);
+      animation: pulseDot 2.5s ease-in-out infinite;
     }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 
     @media (max-width: 480px) {
       .option-btn { font-size: 14px; padding: 14px 16px; }
@@ -457,7 +480,7 @@ export default function QuizPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "var(--black)",
+          background: "var(--bg)",
           fontFamily: "var(--sans)",
           color: "var(--white)",
           display: "flex",
@@ -497,9 +520,9 @@ export default function QuizPage() {
               height: 500,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(255,92,26,.13) 0%, transparent 70%)",
+                "radial-gradient(circle, rgba(15,223,176,.09) 0%, transparent 70%)",
               animation: "orb1 20s ease-in-out infinite",
-              filter: "blur(50px)",
+              filter: "blur(60px)",
             }}
           />
           <div
@@ -511,9 +534,9 @@ export default function QuizPage() {
               height: 400,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(255,179,71,.08) 0%, transparent 70%)",
+                "radial-gradient(circle, rgba(15,223,176,.06) 0%, transparent 70%)",
               animation: "orb2 24s ease-in-out infinite",
-              filter: "blur(60px)",
+              filter: "blur(70px)",
             }}
           />
           <div
@@ -534,43 +557,27 @@ export default function QuizPage() {
             left: 0,
             right: 0,
             zIndex: 100,
-            background: "rgba(6,6,10,.85)",
-            backdropFilter: "blur(20px)",
+            background: "rgba(6,9,15,.88)",
+            backdropFilter: "blur(18px)",
             borderBottom: "1px solid var(--border)",
-            padding: "0 24px",
+            padding: "0 22px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: 60,
+            height: 54,
           }}
         >
           <a
             href="/"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
               textDecoration: "none",
               color: "var(--white)",
+              fontWeight: 800,
+              fontSize: 16,
+              letterSpacing: "-.03em",
             }}
           >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: "linear-gradient(135deg, var(--orange), #ff9f50)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 14,
-              }}
-            >
-              💨
-            </div>
-            <span style={{ fontWeight: 800, fontSize: 15 }}>
-              invisible<span style={{ color: "var(--orange)" }}>inhale</span>
-            </span>
+            invisible<span style={{ color: "var(--teal)" }}>inhale</span>
           </a>
           <div style={{ display: "flex", gap: 8 }}>
             {/*             <button
@@ -641,13 +648,10 @@ export default function QuizPage() {
                   {locale === "HU" ? "Teszteld A" : "Test Your"}{" "}
                   <span
                     style={{
-                      fontFamily: "var(--serif)",
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      background:
-                        "linear-gradient(135deg, var(--orange), var(--amber))",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
+                      fontFamily: "var(--sans)",
+                      fontStyle: "normal",
+                      fontWeight: 700,
+                      color: "var(--teal)",
                     }}
                   >
                     {locale === "HU" ? "Tudásod!" : "Knowledge!"}
@@ -673,10 +677,10 @@ export default function QuizPage() {
                         borderRadius: 4,
                         background:
                           i < current
-                            ? "var(--orange)"
+                            ? "var(--teal)"
                             : i === current
-                              ? "rgba(255,92,26,.4)"
-                              : "rgba(255,255,255,.08)",
+                              ? "rgba(15,223,176,.35)"
+                              : "var(--border)",
                         marginRight: i < questions.length - 1 ? 4 : 0,
                         transition: "background .4s",
                       }}
@@ -713,10 +717,11 @@ export default function QuizPage() {
                 className="quiz-card quiz-inner"
                 key={current}
                 style={{
-                  background: "rgba(255,255,255,.03)",
+                  background: "var(--card)",
                   border: "1px solid var(--border)",
-                  borderRadius: 24,
-                  padding: "32px",
+                  borderRadius: 12,
+                  padding: "24px",
+                  boxShadow: "0 12px 32px rgba(0,0,0,.22)",
                 }}
               >
                 {/* Question */}
@@ -836,10 +841,10 @@ export default function QuizPage() {
                       style={{
                         background: isCorrect
                           ? "rgba(34,197,94,.07)"
-                          : "rgba(239,68,68,.07)",
+                          : "rgba(244,63,94,.08)",
                         border: `1px solid ${isCorrect ? "rgba(34,197,94,.2)" : "rgba(239,68,68,.2)"}`,
-                        borderRadius: 14,
-                        padding: "16px 20px",
+                        borderRadius: 8,
+                        padding: "14px 16px",
                         marginBottom: 20,
                       }}
                     >
@@ -956,7 +961,7 @@ export default function QuizPage() {
                     width: 120,
                     height: 120,
                     borderRadius: "50%",
-                    background: "var(--black)",
+                    background: "var(--bg)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -1024,10 +1029,10 @@ export default function QuizPage() {
               <div
                 className="fade-up d3"
                 style={{
-                  background: "rgba(255,255,255,.03)",
+                  background: "var(--card)",
                   border: "1px solid var(--border)",
-                  borderRadius: 20,
-                  padding: "20px 24px",
+                  borderRadius: 12,
+                  padding: "18px 20px",
                   marginBottom: 28,
                   textAlign: "left",
                 }}
