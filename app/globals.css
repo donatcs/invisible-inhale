@@ -22,3 +22,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── TICKER ── */
+.ticker {
+  background: var(--r);
+  overflow: hidden;
+  padding: 11px 0;
+}
+.ticker-t {
+  display: flex;
+  animation: marquee 28s linear infinite;
+  width: max-content;
+}
+.t-item {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 40px;
+  white-space: nowrap;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 240, 0.9);
+}
+.t-sep {
+  font-size: 16px;
+  opacity: 0.5;
+}
