@@ -9,8 +9,8 @@ const FontLink = () => (
 
     :root {
       --bg:      #06090f;
-      --surface: #0d1324;
-      --card:    #111a2e;
+      --surface: #0f252d88;
+      --card:    #0f252d88;
       --border:  rgba(255,255,255,.1);
       --bord2:   rgba(255,255,255,.2);
       --teal:    #1bf2c2;
