@@ -34,12 +34,18 @@ export default function SmokeTracker() {
   }));
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 font-sans">
+    <div
+      className="min-h-screen bg-zinc-950 p-8 font-sans"
+      style={{ color: "var(--color)" }}
+    >
       <header className="max-w-4xl mx-auto mb-12">
         <h1 className="text-4xl font-bold tracking-tighter text-orange-500 uppercase">
           The Invisible Inhale
         </h1>
-        <p className="text-zinc-400 mt-2 text-lg">
+        <p
+          className="mt-2 text-lg"
+          style={{ color: "var(--color)", opacity: 0.7 }}
+        >
           Visualizing 25+ years of secondhand smoke exposure.
         </p>
       </header>
@@ -47,7 +53,10 @@ export default function SmokeTracker() {
       <main className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Input Card */}
         <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 shadow-xl">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-4">
+          <h2
+            className="text-sm font-semibold uppercase mb-4"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Duration
           </h2>
           <input
@@ -60,39 +69,59 @@ export default function SmokeTracker() {
           />
           <p className="text-3xl font-bold mt-4">
             {years}{" "}
-            <span className="text-sm font-normal text-zinc-500">Years</span>
+            <span
+              className="text-sm font-normal"
+              style={{ color: "var(--color)", opacity: 0.55 }}
+            >
+              Years
+            </span>
           </p>
         </div>
 
         {/* Big Stat 1 */}
         <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-2">
+          <h2
+            className="text-sm font-semibold uppercase mb-2"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Passive Cigarettes
           </h2>
           <p className="text-4xl font-black text-orange-600 tracking-tight">
             {stats.totalCigs.toLocaleString()}
           </p>
-          <p className="text-xs text-zinc-500 mt-2">
+          <p
+            className="text-xs mt-2"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Total inhaled involuntarily.
           </p>
         </div>
 
         {/* Big Stat 2 */}
         <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-2">
+          <h2
+            className="text-sm font-semibold uppercase mb-2"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Toxin Exposure
           </h2>
           <p className="text-4xl font-black text-yellow-600 tracking-tight">
             7,000+
           </p>
-          <p className="text-xs text-zinc-500 mt-2">
+          <p
+            className="text-xs mt-2"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Chemicals processed by your lungs.
           </p>
         </div>
 
         {/* Chart Section */}
         <div className="md:col-span-3 bg-zinc-900 p-8 rounded-xl border border-zinc-800 h-80">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase mb-6">
+          <h2
+            className="text-sm font-semibold uppercase mb-6"
+            style={{ color: "var(--color)", opacity: 0.55 }}
+          >
             Cumulative Inhalation Over Time
           </h2>
           <ResponsiveContainer width="100%" height="100%">
@@ -136,7 +165,10 @@ export default function SmokeTracker() {
         </div>
       </main>
 
-      <footer className="max-w-4xl mx-auto mt-12 pt-8 border-t border-zinc-800 text-zinc-600 text-sm">
+      <footer
+        className="max-w-4xl mx-auto mt-12 pt-8 border-t border-zinc-800 text-sm"
+        style={{ color: "var(--color)", opacity: 0.45 }}
+      >
         <p>
           This is a data visualization based on my 25 years of lived experience.
           Secondhand smoke is an invisible burden.
