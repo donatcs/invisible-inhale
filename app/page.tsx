@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   XAxis,
   YAxis,
@@ -9,7 +9,6 @@ import {
   Area,
 } from "recharts";
 
-// ── Local imports ─────────────────────────────────────────────────────────────
 import {
   runEngine,
   CalcResult,
@@ -22,138 +21,337 @@ import {
 import { CHEMICALS, TOXICITY_COLORS, ChemicalName } from "./lib/chemicals";
 import ShareModal from "./components/ShareModal";
 
-// ─── Google Fonts + Global Styles ─────────────────────────────────────────────
+// ─── Fonts + Global CSS ───────────────────────────────────────────────────────
 const FontLink = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --black: #06060a; --surface: #0e0e14;
-      --card: rgba(255,255,255,0.035); --border: rgba(255,255,255,0.08);
-      --orange: #ff5c1a; --amber: #ffb347;
-      --white: #f5f3ee; --color: #f5f3ee; --muted: rgba(245,243,238,0.45);
-      --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif; --serif: 'Instrument Serif', serif;
+      --bg:      #06090f;
+      --surface: #0f252d88;
+      --card:    #0f252d88;
+      --border:  rgba(255, 255, 255, 0.1);
+      --bord2:   rgba(255,255,255,.2);
+      --teal:    #1bf2c2;
+      --teal-d:  rgba(15,223,176,.08);
+      --amber:   #f59e0b;
+      --red:     #f43f5e;
+      --white:   #f1f5f9;
+      --muted:   rgba(241,245,249,.58);
+      --dim:     rgba(241,245,249,.34);
+      --sans:    'Outfit', sans-serif;
+      --mono:    'IBM Plex Mono', monospace;
     }
+
     html { scroll-behavior: smooth; }
-    body { background: var(--black); color: var(--color); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
 
-    @keyframes fadeUp    { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes gridPulse { 0%,100%{opacity:.4;} 50%{opacity:.7;} }
-    @keyframes orb1      { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(60px,-40px) scale(1.1);} 66%{transform:translate(-30px,50px) scale(.95);} }
-    @keyframes orb2      { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(-70px,60px) scale(1.05);} 66%{transform:translate(50px,-30px) scale(.9);} }
-    @keyframes pulseDot  { 0%,100%{box-shadow:0 0 0 0 rgba(255,92,26,.5);} 50%{box-shadow:0 0 0 8px rgba(255,92,26,0);} }
-    @keyframes radioactive { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-    @keyframes slideIn   { from{opacity:0;transform:scale(.96) translateY(16px);} to{opacity:1;transform:scale(1) translateY(0);} }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
 
-    .fade-up{animation:fadeUp .7s ease both;}
-    .delay-1{animation-delay:.1s;} .delay-2{animation-delay:.2s;} .delay-3{animation-delay:.3s;}
-    .delay-4{animation-delay:.4s;} .delay-5{animation-delay:.5s;} .delay-6{animation-delay:.6s;} .delay-8{animation-delay:.8s;}
+    /* single subtle vignette on the page — no orbs */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15,223,176,.04) 0%, transparent 70%);
+    }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-    .glass { background:var(--card); border:1px solid var(--border); border-radius:20px; backdrop-filter:blur(12px); }
-    .badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,92,26,.12); border:1px solid rgba(255,92,26,.3); border-radius:100px; padding:6px 14px; font-size:11px; font-weight:600; letter-spacing:.12em; color:var(--orange); text-transform:uppercase; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:var(--orange); animation:pulseDot 2s infinite; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes radioactive { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-    .inp { width:100%; padding:12px 16px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; color:var(--color); font-family:var(--mono); font-size:14px; outline:none; transition:border-color .2s, background .2s; }
-    .inp:focus { border-color:var(--orange); background:rgba(255,92,26,.06); }
-    .inp-label { display:block; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .fu  { animation: fadeUp .65s cubic-bezier(.22,1,.36,1) both; }
+    .d1  { animation-delay: .05s; } .d2 { animation-delay: .14s; }
+    .d3  { animation-delay: .23s; } .d4 { animation-delay: .34s; }
+    .d5  { animation-delay: .46s; } .d6 { animation-delay: .6s;  }
 
-    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px; position:relative; overflow:hidden; transition:border-color .3s, transform .3s; cursor:default; }
-    .stat-card:hover { border-color:rgba(255,92,26,.35); transform:translateY(-3px); }
-    .stat-card::before { content:''; position:absolute; inset:0; background:radial-gradient(60% 60% at 50% 0%, rgba(255,92,26,.08) 0%, transparent 100%); opacity:0; transition:opacity .3s; }
-    .stat-card:hover::before { opacity:1; }
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 54px;
+      background: rgba(6,9,15,.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 22px;
+    }
+    .nav-logo {
+      font-family: var(--sans); font-weight: 800; font-size: 16px;
+      letter-spacing: -.03em; color: var(--white); text-decoration: none;
+      margin-right: auto;
+    }
+    .nav-logo b { color: var(--teal); }
+    .nav-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500;
+      color: var(--muted); text-decoration: none;
+      padding: 5px 11px; border-radius: 6px;
+      transition: color .15s, background .15s;
+    }
+    .nav-pill:hover { color: var(--white); background: rgba(255,255,255,.05); }
+    .nav-pill.active {
+      color: var(--teal); background: var(--teal-d);
+    }
+    .nav-soon {
+      font-family: var(--mono); font-size: 8px; font-weight: 500;
+      color: var(--amber); letter-spacing: .1em; text-transform: uppercase;
+      border: 1px solid rgba(245,158,11,.3); border-radius: 3px;
+      padding: 1px 5px; margin-left: 2px; vertical-align: middle;
+    }
+    .nav-cta {
+      font-size: 13px; font-weight: 700; letter-spacing: -.01em;
+      color: var(--bg); background: var(--teal);
+      padding: 7px 15px; border-radius: 7px; text-decoration: none;
+      transition: opacity .15s, transform .15s;
+    }
+    .nav-cta:hover { opacity: .88; transform: translateY(-1px); }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      width: 36px; height: 36px; align-items: center; justify-content: center;
+      background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+    }
+    .hamburger span { display: block; width: 15px; height: 1.5px; background: var(--white); border-radius: 2px; transition: .2s; }
+    .mobile-menu {
+      display: none; position: fixed; top: 58px; left: 0; right: 0;
+      background: rgba(6,9,15,.97); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px 20px; z-index: 99; flex-direction: column; gap: 4px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu .nav-pill { padding: 11px 14px; font-size: 14px; }
 
-    .chem-row { transition:background .2s; }
-    .chem-row:hover { background:rgba(255,255,255,.03); }
-    .locale-btn { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid transparent; cursor:pointer; transition:all .2s; font-family:var(--sans); }
+    /* ── SECTION ANATOMY ─────────────────────────────── */
+    .section-label {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 28px;
+    }
+    .section-label-bar {
+      width: 28px; height: 2px; background: var(--teal); flex-shrink: 0;
+    }
+    .section-label-txt {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      letter-spacing: .18em; text-transform: uppercase; color: var(--teal);
+    }
+    .section-label-line { flex: 1; height: 1px; background: var(--border); }
 
-    input[type=range] { -webkit-appearance:none; width:100%; height:4px; border-radius:4px; outline:none; cursor:pointer; background:rgba(255,255,255,.1); }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--orange); border:3px solid var(--black); box-shadow:0 0 0 2px var(--orange); }
+    .section-h {
+      font-size: clamp(24px,3.6vw,36px); font-weight: 800;
+      letter-spacing: -.04em; line-height: 1.05; color: var(--white);
+      margin-bottom: 10px;
+    }
+    .section-sub {
+      font-size: 14px; font-weight: 400; color: var(--muted);
+      line-height: 1.62; max-width: 520px;
+    }
 
-    .modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:24px; }
-    .modal-box { background:#13131a; border:1px solid rgba(255,92,26,.3); border-radius:24px; padding:36px; max-width:480px; width:100%; animation:slideIn .3s ease; position:relative; }
+    /* ── CARD ─────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.22);
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .card:hover {
+      border-color: var(--bord2);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(0,0,0,.28);
+    }
 
-    .promise-wrap { display:flex; align-items:center; gap:16px; margin:36px auto; max-width:480px; justify-content:center; }
-    .promise-line { flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(255,92,26,.4)); }
-    .promise-line.right { background:linear-gradient(90deg, rgba(255,92,26,.4), transparent); }
-    .promise-text { font-family:var(--serif); font-style:italic; font-size:clamp(15px,2vw,18px); color:var(--orange); white-space:nowrap; }
+    /* ── STAT CELL ────────────────────────────────────── */
+    .stat-cell {
+      padding: 18px;
+      border-top: 2px solid var(--border);
+      transition: border-color .2s;
+    }
+    .stat-cell:hover { border-top-color: var(--teal); }
+    .stat-cell-label {
+      font-family: var(--mono); font-size: 9px; font-weight: 500;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: 10px; display: block;
+    }
+    .stat-cell-val {
+      font-family: var(--mono); font-size: 24px; font-weight: 500;
+      letter-spacing: -.02em; line-height: 1; display: block; margin-bottom: 4px;
+    }
+    .stat-cell-note {
+      font-family: var(--mono); font-size: 10px; color: var(--dim);
+    }
 
-    /* Share button */
-    .share-btn { display:inline-flex; align-items:center; gap:8px; padding:14px 28px; border-radius:100px; background:rgba(255,92,26,.12); border:1px solid rgba(255,92,26,.4); color:var(--orange); font-weight:700; font-size:14px; cursor:pointer; font-family:var(--sans); letter-spacing:-.01em; transition:background .2s, transform .15s; }
-    .share-btn:hover { background:rgba(255,92,26,.2); transform:translateY(-2px); }
+    /* ── INPUTS ───────────────────────────────────────── */
+    .field-label {
+      display: block; font-size: 11px; font-weight: 600;
+      letter-spacing: -.01em; color: var(--muted); margin-bottom: 7px;
+    }
+    .inp {
+      width: 100%; padding: 9px 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 7px; color: var(--white);
+      font-family: var(--mono); font-size: 13px;
+      outline: none; appearance: none;
+      transition: border-color .15s, background .15s;
+    }
+    .inp:focus {
+      border-color: var(--teal);
+      background: rgba(15,223,176,.04);
+    }
+    .inp-group { margin-bottom: 12px; }
 
-    /* Light mode */
-    .light-mode { --black:#f5f0eb; --surface:#ede8e0; --card:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.1); --white:#1a1612; --color:#1a1612; --muted:rgba(26,22,18,0.5); }
-    .light-mode body { background:#f5f0eb; color:var(--color); }
-    .light-mode .glass { background:rgba(255,255,255,0.75)!important; border-color:rgba(0,0,0,0.08)!important; }
-    .light-mode .stat-card { background:rgba(255,255,255,0.75)!important; border-color:rgba(0,0,0,0.08)!important; }
-    .light-mode .modal-box { background:#fff!important; }
-    .light-mode nav { background:rgba(245,240,235,.9)!important; border-bottom-color:rgba(0,0,0,0.08)!important; }
-    .light-mode .hero-grid { background-image:linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px)!important; }
-    .light-mode .hero-vignette { background:radial-gradient(ellipse at center,transparent 30%,#f5f0eb 100%)!important; }
-    .light-mode .source-note { background:rgba(255,179,71,.08)!important; color:rgba(180,120,0,.9)!important; }
-    .light-mode .chem-table-header { background:rgba(0,0,0,.03)!important; }
-    .light-mode .chem-row:hover { background:rgba(0,0,0,.02)!important; }
-    .light-mode .footer-copyright { color:rgba(26,22,18,.3)!important; }
-    .light-mode .modal-close-btn { background:rgba(0,0,0,.05)!important; color:var(--color)!important; }
-    .light-mode input[type=range] { background:rgba(0,0,0,.12)!important; }
-    .light-mode .nav-link:hover { background:rgba(0,0,0,.05); }
-    .light-mode .mobile-menu { background:rgba(245,240,235,.97); }
-    .light-mode .theme-btn { background:rgba(0,0,0,.05)!important; border-color:rgba(0,0,0,.12)!important; }
+    /* ── TABLE ────────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      font-family: var(--mono); font-size: 9px; font-weight: 500;
+      letter-spacing: .15em; text-transform: uppercase; color: var(--dim);
+      padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background .15s; }
+    .data-table tbody tr:hover { background: rgba(255,255,255,.02); }
 
-    /* Nav */
-    .nav-link { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--muted); text-decoration:none; background:transparent; border:none; cursor:pointer; font-family:var(--sans); letter-spacing:-.01em; transition:color .2s, background .2s; white-space:nowrap; }
-    .nav-link:hover { color:var(--color); background:rgba(255,255,255,.06); }
-    .nav-link.cta-link { background:var(--orange); color:var(--color)!important; padding:6px 16px; border-radius:100px; }
-    .nav-link.cta-link:hover { background:#ff7a40; box-shadow:0 0 20px rgba(255,92,26,.3); }
-    .nav-divider { width:1px; height:18px; background:var(--border); flex-shrink:0; }
-    .hamburger { display:none; flex-direction:column; gap:5px; width:36px; height:36px; align-items:center; justify-content:center; background:transparent; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
-    .hamburger span { display:block; width:16px; height:2px; background:var(--white); border-radius:2px; transition:transform .2s, opacity .2s; }
-    .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(6,6,10,.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:16px 24px 24px; z-index:99; flex-direction:column; gap:4px; }
-    .mobile-menu.open { display:flex; }
-    .mobile-menu .nav-link { padding:12px 14px; font-size:15px; border-radius:10px; }
-    .mobile-menu .nav-link.cta-link { margin-top:8px; text-align:center; justify-content:center; border-radius:100px; padding:12px; }
-    .theme-btn { width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.05); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:background .2s, border-color .2s; }
-    .theme-btn:hover { background:rgba(255,92,26,.15); border-color:rgba(255,92,26,.4); }
-    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--black); } ::-webkit-scrollbar-thumb { background:rgba(255,92,26,.4); border-radius:3px; }
+    /* ── BADGE ────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--teal-d); border: 1px solid rgba(15,223,176,.2);
+      border-radius: 5px; padding: 4px 11px;
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      letter-spacing: .14em; color: var(--teal); text-transform: uppercase;
+    }
+    .badge-dot {
+      width: 5px; height: 5px; border-radius: 50%; background: var(--teal);
+      animation: blink 2.5s ease-in-out infinite;
+    }
 
-    .grid-3 { grid-template-columns:repeat(3,1fr); }
-    .grid-2 { grid-template-columns:repeat(2,1fr); }
-    .stats-strip { grid-template-columns:repeat(3,1fr); }
-    .hero-btns { flex-direction:row; }
-    @media (max-width:900px) { .nav-links{display:none!important;} .hamburger{display:flex!important;} }
-    @media (max-width:768px) {
-      .grid-3{grid-template-columns:1fr!important;} .grid-2{grid-template-columns:1fr!important;}
-      .stats-strip{grid-template-columns:1fr!important;} .hero-btns{flex-direction:column!important; align-items:stretch!important;}
-      .hero-btns a{text-align:center!important; justify-content:center!important;}
-      .section-pad{padding-left:16px!important; padding-right:16px!important;}
-      .calc-glass{padding:20px!important;} .modal-box{padding:24px!important; margin:16px!important;}
-      .stat-card{padding:20px!important;} .nav-inner{padding:0 16px!important;}
+    /* ── RISK BAR ─────────────────────────────────────── */
+    .risk-bar-bg {
+      width: 100%; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,.07); overflow: hidden;
+    }
+    .risk-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ── TICKER ───────────────────────────────────────── */
+    .ticker-wrap {
+      overflow: hidden; border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0; background: var(--surface);
+    }
+    .ticker-track {
+      display: flex; animation: ticker 36s linear infinite;
+      width: max-content;
+    }
+    .ticker-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 28px; white-space: nowrap;
+      font-family: var(--mono); font-size: 10px; font-weight: 400;
+      color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
+    }
+    .ticker-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--teal); opacity: .6; }
+
+    /* ── MODAL ────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(6,9,15,.85); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .modal-box {
+      background: var(--card); border: 1px solid var(--bord2);
+      border-radius: 12px; padding: 24px; max-width: 460px; width: 100%;
+      position: relative;
+    }
+
+    /* ── COTININE READOUT ─────────────────────────────── */
+    .cotinine-block {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cotinine-eyebrow {
+      font-family: var(--mono); font-size: 9px; font-weight: 500;
+      letter-spacing: .18em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+    }
+    .cotinine-eyebrow::before { content:''; display:block; width:20px; height:1px; background:var(--teal); }
+    .cotinine-num {
+      font-family: var(--mono); font-size: clamp(44px,6vw,72px);
+      font-weight: 400; letter-spacing: -.03em; line-height: 1;
+    }
+    .cotinine-unit { font-size: .35em; color: var(--muted); vertical-align: baseline; margin-left: 6px; }
+    .cotinine-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 4px;
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-left: 16px; vertical-align: middle;
+    }
+    .cotinine-ref {
+      font-family: var(--mono); font-size: 10px; color: var(--dim);
+      line-height: 1.9; margin-top: 14px;
+    }
+
+    /* ── RANGE SLIDER ─────────────────────────────────── */
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; height: 2px;
+      border-radius: 2px; outline: none; cursor: pointer;
+      background: rgba(255,255,255,.1);
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--teal);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 3px rgba(15,223,176,.15);
+    }
+
+    /* ── SCROLLBAR ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+
+    /* ── RESPONSIVE ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .nav-links-row { display: none !important; }
+      .hamburger { display: flex !important; }
+    }
+    @media (max-width: 768px) {
+      .calc-grid { grid-template-columns: 1fr !important; }
+      .results-grid-3 { grid-template-columns: 1fr !important; }
+      .results-grid-2 { grid-template-columns: 1fr !important; }
+      .timeline-grid { grid-template-columns: 1fr !important; }
+      .action-grid { grid-template-columns: 1fr !important; }
+      .hero-stats { grid-template-columns: 1fr !important; }
+      .faq-row { grid-template-columns: 1fr !important; }
     }
   `}</style>
 );
 
-// ─── Nav links config ─────────────────────────────────────────────────────────
-const NAV_LINKS = (isHU: boolean) => [
-  { label: isHU ? "Kvíz" : "Quiz", href: "/quiz" },
-  { label: isHU ? "Kalkulátor" : "Calculator", href: "#calculator" },
-  { label: isHU ? "Vegyi anyagok" : "Chemicals", href: "#chemicals" },
-  { label: isHU ? "Hírek" : "News", href: "/news", soon: true },
-  {
-    label: isHU ? "Szabályozások" : "Regulations",
-    href: "/regulations",
-    soon: true,
-  },
+// ─── Nav links ────────────────────────────────────────────────────────────────
+const NAV_LINKS = [
+  { label: "Calculator", href: "#calculator" },
+  { label: "Chemicals", href: "#chemicals" },
+  { label: "News", href: "/news", soon: true },
+  { label: "Research", href: "/research", soon: true },
 ];
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function SmokeTracker() {
-  const [isDark, setIsDark] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [locale, setLocale] = useState("US");
   const [shareOpen, setShareOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedChem, setSelectedChem] = useState<string | null>(null);
 
-  // Calculator state
   const [years, setYears] = useState(10);
   const [cigsPerDay, setCigsPerDay] = useState(5);
   const [smokers, setSmokers] = useState(1);
@@ -169,11 +367,6 @@ export default function SmokeTracker() {
   const [condition, setCondition] = useState<Condition>("none");
   const [weight, setWeight] = useState(70);
   const [result, setResult] = useState<CalcResult | null>(null);
-
-  const [selectedChem, setSelectedChem] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const isHU = locale === "HU";
 
   useEffect(() => {
     setResult(
@@ -220,2287 +413,1741 @@ export default function SmokeTracker() {
 
   const bioColor = result
     ? result.biomarker.interpretation === "background"
-      ? "#4ade80"
+      ? "#0fdfb0"
       : result.biomarker.interpretation === "low"
         ? "#f59e0b"
         : result.biomarker.interpretation === "moderate"
-          ? "#f97316"
-          : "#ef4444"
-    : "#4ade80";
+          ? "#fb923c"
+          : "#f43f5e"
+    : "#0fdfb0";
 
-  const SOON_TAG = (
-    <span
-      style={{
-        fontSize: 9,
-        fontFamily: "var(--mono)",
-        fontWeight: 700,
-        color: "var(--orange)",
-        background: "rgba(255,92,26,.12)",
-        border: "1px solid rgba(255,92,26,.25)",
-        borderRadius: 4,
-        padding: "1px 5px",
-        marginLeft: 4,
-      }}
-    >
-      SOON
-    </span>
-  );
-
+  // ─── render ───────────────────────────────────────────────────────────────
   return (
     <>
       <FontLink />
       <div
-        className={!isDark ? "light-mode" : ""}
         style={{
-          background: "var(--black)",
+          background: "var(--bg)",
           minHeight: "100vh",
           fontFamily: "var(--sans)",
-          overflow: "hidden",
-          transition: "background .3s, color .3s",
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        {/* ── NAV ── */}
-        <nav
-          className="nav-inner"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: "rgba(6,6,10,.8)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid var(--border)",
-            padding: "0 24px",
-          }}
-        >
+        {/* ── NAV ─────────────────────────────────────────── */}
+        <nav>
+          <a href="#" className="nav-logo">
+            invisible<b>inhale</b>
+          </a>
+
           <div
-            className="container"
+            className="nav-links-row"
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              height: 64,
+              gap: 2,
+              marginRight: 20,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div
+            {NAV_LINKS.map(({ label, href, soon }) => (
+              <a
+                key={label}
+                href={soon ? undefined : href}
+                className="nav-pill"
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg, var(--orange), #ff9f50)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 16,
+                  cursor: soon ? "default" : "pointer",
+                  opacity: soon ? 0.5 : 1,
+                  pointerEvents: soon ? "none" : undefined,
                 }}
               >
-                💨
-              </div>
-              <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: 16,
-                  letterSpacing: "-.02em",
-                  cursor: "pointer",
-                }}
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              >
-                <span style={{ color: "var(--color)" }}>invisible</span>
-                <span style={{ color: "var(--orange)" }}>inhale</span>
-              </span>
-            </div>
-            <div
-              className="nav-links"
-              style={{ display: "flex", alignItems: "center", gap: 2 }}
-            >
-              {NAV_LINKS(isHU).map(({ label, href, soon }) => (
-                <a
-                  key={label}
-                  href={soon ? undefined : href}
-                  className="nav-link"
-                  style={{
-                    cursor: soon ? "default" : "pointer",
-                    opacity: soon ? 0.5 : 1,
-                  }}
-                  onClick={soon ? (e) => e.preventDefault() : undefined}
-                >
-                  {label}
-                  {soon && SOON_TAG}
-                </a>
-              ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {/*               <button className="theme-btn" onClick={() => setIsDark(!isDark)}>
-                {isDark ? "☀️" : "🌙"}
-              </button> */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 6,
-                  background: "rgba(255,255,255,.05)",
-                  borderRadius: 12,
-                  padding: 4,
-                }}
-              >
-                {/*                 {["US", "HU"].map((l) => (
-                  <button
-                    key={l}
-                    className="locale-btn"
-                    onClick={() => setLocale(l)}
-                    style={{
-                      background:
-                        locale === l ? "var(--orange)" : "transparent",
-                      color: locale === l ? "var(--color)" : "var(--muted)",
-                      border: "none",
-                    }}
-                  >
-                    {l === "US" ? "🇺🇸 EN" : "🇭🇺 HU"}
-                  </button>
-                ))} */}
-              </div>
-              <button
-                className="hamburger"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="Toggle menu"
-              >
-                <span
-                  style={{
-                    transform: menuOpen
-                      ? "rotate(45deg) translate(5px,5px)"
-                      : "none",
-                  }}
-                />
-                <span style={{ opacity: menuOpen ? 0 : 1 }} />
-                <span
-                  style={{
-                    transform: menuOpen
-                      ? "rotate(-45deg) translate(5px,-5px)"
-                      : "none",
-                  }}
-                />
-              </button>
-            </div>
+                {label}
+                {soon && <span className="nav-soon">soon</span>}
+              </a>
+            ))}
           </div>
+
+          <a href="/quiz" className="nav-cta">
+            Take the Quiz →
+          </a>
+
+          <button
+            className="hamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ marginLeft: 12 }}
+            aria-label="Menu"
+          >
+            <span
+              style={{
+                transform: menuOpen
+                  ? "rotate(45deg) translate(4px,4px)"
+                  : "none",
+              }}
+            />
+            <span style={{ opacity: menuOpen ? 0 : 1 }} />
+            <span
+              style={{
+                transform: menuOpen
+                  ? "rotate(-45deg) translate(4px,-4px)"
+                  : "none",
+              }}
+            />
+          </button>
         </nav>
 
-        {/* ── MOBILE MENU ── */}
+        {/* ── MOBILE MENU ─────────────────────────────────── */}
         <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-          {NAV_LINKS(isHU).map(({ label, href, soon }) => (
+          {NAV_LINKS.map(({ label, href, soon }) => (
             <a
               key={label}
               href={soon ? undefined : href}
-              className="nav-link"
-              style={{
-                opacity: soon ? 0.5 : 1,
-                cursor: soon ? "default" : "pointer",
-              }}
-              onClick={(e) => {
-                if (soon) e.preventDefault();
-                else setMenuOpen(false);
-              }}
+              className="nav-pill"
+              style={{ opacity: soon ? 0.45 : 1 }}
+              onClick={() => !soon && setMenuOpen(false)}
             >
-              {label}
-              {soon && SOON_TAG}
+              {label} {soon && <span className="nav-soon">soon</span>}
             </a>
           ))}
           <a
             href="/quiz"
-            className="nav-link cta-link"
+            className="nav-pill active"
+            style={{ marginTop: 8 }}
             onClick={() => setMenuOpen(false)}
           >
-            {isHU ? "Kvíz →" : "Quiz →"}
+            Take the Quiz →
           </a>
         </div>
 
-        {/* ── HERO ── */}
+        {/* ── TICKER ──────────────────────────────────────── */}
+        <div className="ticker-wrap" style={{ marginTop: 58 }}>
+          <div className="ticker-track">
+            {[
+              "7,000+ chemicals",
+              "70+ known carcinogens",
+              "No safe level of exposure",
+              "Polonium-210 is radioactive",
+              "3× sidestream vs mainstream",
+              "Children breathe 2× faster",
+              "Persists on surfaces for hours",
+              "7,000+ chemicals",
+              "70+ known carcinogens",
+              "No safe level of exposure",
+              "Polonium-210 is radioactive",
+              "3× sidestream vs mainstream",
+              "Children breathe 2× faster",
+              "Persists on surfaces for hours",
+            ].map((t, i) => (
+              <div key={i} className="ticker-item">
+                <span className="ticker-sep" />
+                {t}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── HERO ─────────────────────────────────────────── */}
         <section
-          className="section-pad"
           style={{
-            position: "relative",
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            padding: "120px 5vw 80px",
-            overflow: "hidden",
+            padding: "80px 24px 56px",
+            maxWidth: 1040,
+            margin: "0 auto",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              overflow: "hidden",
-              zIndex: 0,
-            }}
-          >
-            <div
-              className="hero-grid"
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundImage: `linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px)`,
-                backgroundSize: "60px 60px",
-                animation: "gridPulse 4s ease-in-out infinite",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: "15%",
-                left: "10%",
-                width: 600,
-                height: 600,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle,rgba(255,92,26,.15) 0%,transparent 70%)",
-                animation: "orb1 18s ease-in-out infinite",
-                filter: "blur(40px)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: "10%",
-                right: "5%",
-                width: 500,
-                height: 500,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle,rgba(255,92,26,.1) 0%,transparent 70%)",
-                animation: "orb2 22s ease-in-out infinite",
-                filter: "blur(50px)",
-              }}
-            />
-            <div
-              className="hero-vignette"
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(ellipse at center,transparent 30%,var(--black) 100%)",
-              }}
-            />
+          <div className="fu" style={{ marginBottom: 28 }}>
+            <span className="badge">
+              <span className="badge-dot" />
+              Science-backed Exposure Platform
+            </span>
           </div>
-          <div
+
+          <h1
+            className="fu d1"
             style={{
-              zIndex: 1,
-              maxWidth: "860px",
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+              fontSize: "clamp(42px, 7vw, 88px)",
+              fontWeight: 900,
+              letterSpacing: "-.045em",
+              lineHeight: 0.95,
+              color: "var(--white)",
+              marginBottom: 28,
+              maxWidth: 820,
             }}
           >
-            <div className="fade-up" style={{ marginBottom: 32 }}>
-              <span className="badge">
-                <span className="badge-dot" />
-                {isHU
-                  ? "Oktatási platform • Tudományos alapokon"
-                  : "Secondhand smoke exposure platform • Science-backed data"}
-              </span>
-            </div>
-            <h1
+            Secondhand smoke is a measurable harm.
+          </h1>
+
+          <p
+            className="fu d2"
+            style={{
+              fontSize: 16,
+              fontWeight: 400,
+              color: "var(--muted)",
+              lineHeight: 1.75,
+              maxWidth: 540,
+              marginBottom: 40,
+            }}
+          >
+            Even when you can't see it. Calculate your personal exposure to 8
+            pollutants using peer-reviewed scientific models — and understand
+            what it means for your health.
+          </p>
+
+          <div
+            className="fu d3"
+            style={{
+              display: "flex",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 72,
+            }}
+          >
+            <a
+              href="#calculator"
               style={{
-                fontSize: "clamp(38px,5vw,108px)",
-                fontWeight: 400,
-                lineHeight: 1.0,
-                letterSpacing: "-.04em",
-                marginBottom: 0,
-                color: "var(--color)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "13px 28px",
+                borderRadius: 8,
+                background: "var(--teal)",
+                color: "var(--bg)",
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: "-.01em",
+                textDecoration: "none",
+                transition: "opacity .15s, transform .15s",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.opacity = ".88";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.transform = "none";
               }}
             >
-              <span style={{ display: "block", overflow: "hidden" }}>
-                <span
-                  className="fade-up delay-1"
-                  style={{ display: "inline-block" }}
-                >
-                  {isHU ? "A passzív dohányzás," : "Secondhand smoke is"}
-                </span>
-              </span>
-              <span style={{ display: "block", overflow: "hidden" }}>
-                <span
-                  className="fade-up delay-2"
-                  style={{ display: "inline-block" }}
-                >
-                  {isHU ? "avagy a" : "a hidden health threat"}
-                </span>
-              </span>
-              <span style={{ display: "block", overflow: "hidden" }}>
-                <span
-                  className="fade-up delay-3"
-                  style={{
-                    display: "inline-block",
-                    fontFamily: "var(--serif)",
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    background:
-                      "linear-gradient(135deg,var(--orange) 0%,var(--amber) 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {isHU ? "láthatatlan veszély" : "with invisible risks"}
-                </span>
-              </span>
-            </h1>
-            <div className="promise-wrap fade-up delay-4">
-              <div className="promise-line" />
-              <span className="promise-text">
-                {isHU
-                  ? "Láthatóvá tesszük a láthatatlant."
-                  : "We make the invisible, visible."}
-              </span>
-              <div className="promise-line right" />
-            </div>
-            <div
-              className="fade-up delay-5"
+              Calculate My Exposure →
+            </a>
+            <a
+              href="#chemicals"
               style={{
-                maxWidth: 560,
-                margin: "0 auto 48px",
-                textAlign: "center",
-              }}
-            >
-              {(isHU
-                ? [
-                    "Nem te gyújtottál rá a cigarettára.",
-                    "Nem te döntöttél úgy hogy ilyen káros levegőt lélegezz be.",
-                    "Mégis megtörtént — otthon, autóban, vagy valaki mellett, akit szeretsz.",
-                    "Az Invisible Inhale láthatóvá teszi a rejtett kitettséget. Először láthatod pontosan, mi kerül a tüdődbe engedélyed nélkül — és mit jelent ez az egészségedre nézve.",
-                  ]
-                : [
-                    "You didn't light the cigarette.",
-                    "You didn't choose to breathe it in.",
-                    "But it happened — in your home, in a car, beside someone you love.",
-                    "Invisible Inhale makes that hidden exposure visible. For the first time, see exactly what went into your lungs without your permission — and what it means for your health.",
-                  ]
-              ).map((line, i) => (
-                <p
-                  key={i}
-                  style={{
-                    fontSize:
-                      i === 3
-                        ? "clamp(14px,2vw,16px)"
-                        : "clamp(15px,2.5vw,18px)",
-                    color: i === 3 ? "var(--muted)" : "var(--color)",
-                    lineHeight: 1.7,
-                    marginBottom: i < 2 ? 2 : i === 2 ? 20 : 0,
-                    fontWeight: i < 3 ? 600 : 400,
-                    letterSpacing: i < 3 ? "-.01em" : "normal",
-                  }}
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-            <div
-              className="hero-btns fade-up delay-6"
-              style={{
-                display: "flex",
-                gap: 16,
-                justifyContent: "center",
-                flexWrap: "wrap",
-                marginBottom: 80,
-              }}
-            >
-              <a
-                href="#calculator"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "16px 32px",
-                  borderRadius: 100,
-                  background: "var(--orange)",
-                  color: "var(--color)",
-                  fontWeight: 700,
-                  fontSize: 15,
-                  textDecoration: "none",
-                  letterSpacing: "-.01em",
-                  boxShadow: "0 0 40px rgba(255,92,26,.35)",
-                }}
-              >
-                {isHU ? "Számold ki a kitettséged" : "Calculate My Exposure"} →
-              </a>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                }}
-              >
-                <a
-                  href="#chemicals"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "16px 32px",
-                    borderRadius: 100,
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                    color: "var(--color)",
-                    fontWeight: 600,
-                    fontSize: 15,
-                    textDecoration: "none",
-                    letterSpacing: "-.01em",
-                  }}
-                >
-                  {isHU ? "Vegyi anyagok" : "See Chemicals"}
-                </a>
-              </div>
-            </div>
-            <div
-              className="stats-strip fade-up delay-8"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
-                gap: 1,
-                background: "var(--border)",
-                borderRadius: 20,
-                overflow: "hidden",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "13px 24px",
+                borderRadius: 8,
+                background: "transparent",
                 border: "1px solid var(--border)",
+                color: "var(--muted)",
+                fontWeight: 500,
+                fontSize: 14,
+                textDecoration: "none",
+                transition: "border-color .15s, color .15s",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = "var(--bord2)";
+                e.currentTarget.style.color = "var(--white)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.color = "var(--muted)";
               }}
             >
-              {[
-                {
-                  val: "7,000+",
-                  label: isHU ? "Vegyi anyag" : "Chemicals",
-                  color: "var(--amber)",
-                },
-                {
-                  val: "3,000+",
-                  label: isHU ? "Rákkeltő anyag" : "Carcinogens",
-                  color: "var(--orange)",
-                },
-                {
-                  val: "0%",
-                  label: isHU ? "Biztonságos szint" : "Safe Exposure",
-                  color: "#ff2d55",
-                },
-              ].map((s, i) => (
+              See Chemicals
+            </a>
+          </div>
+
+          {/* Hero stats strip */}
+          <div
+            className="hero-stats fu d4"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: 1,
+              background: "var(--border)",
+              borderRadius: 10,
+              overflow: "hidden",
+              border: "1px solid var(--border)",
+            }}
+          >
+            {[
+              {
+                val: "7,000+",
+                label: "Chemicals in smoke",
+                color: "var(--white)",
+              },
+              { val: "70+", label: "Known carcinogens", color: "var(--amber)" },
+              { val: "0%", label: "Safe exposure level", color: "var(--red)" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                style={{
+                  padding: "28px 24px",
+                  background: "var(--card)",
+                  textAlign: "center",
+                }}
+              >
                 <div
-                  key={i}
                   style={{
-                    padding: "28px 24px",
-                    background: "var(--surface)",
-                    textAlign: "center",
+                    fontFamily: "var(--mono)",
+                    fontSize: 32,
+                    fontWeight: 500,
+                    color: s.color,
+                    letterSpacing: "-.02em",
+                    lineHeight: 1,
+                    marginBottom: 6,
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 36,
-                      fontWeight: 800,
-                      color: s.color,
-                      letterSpacing: "-.03em",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {s.val}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      marginTop: 6,
-                      fontFamily: "var(--mono)",
-                      letterSpacing: ".08em",
-                    }}
-                  >
-                    {s.label}
-                  </div>
+                  {s.val}
                 </div>
-              ))}
-            </div>
+                <div
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 10,
+                    color: "var(--dim)",
+                    letterSpacing: ".12em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {s.label}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* ── CALCULATOR ── */}
+        {/* ── CALCULATOR ───────────────────────────────────── */}
         <section
           id="calculator"
-          className="section-pad"
-          style={{ padding: "100px 5vw", position: "relative" }}
+          style={{ padding: "0 24px 72px", maxWidth: 1040, margin: "0 auto" }}
         >
-          <div className="container">
-            <div style={{ marginBottom: 48, textAlign: "center" }}>
-              <div className="badge" style={{ marginBottom: 20 }}>
-                <span className="badge-dot" />
-                {isHU ? "Tudományos Motor" : "Scientific Exposure Engine"}
-              </div>
-              <h2
-                style={{
-                  fontSize: "clamp(32px,5vw,56px)",
-                  fontWeight: 800,
-                  letterSpacing: "-.03em",
-                  lineHeight: 1.1,
-                  marginBottom: 16,
-                  color: "var(--color)",
-                }}
-              >
-                {isHU ? "Kockázat Kalkulátor" : "Risk Calculator"}
-              </h2>
-              <p
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 15,
-                  maxWidth: 560,
-                  margin: "0 auto",
-                  lineHeight: 1.7,
-                }}
-              >
-                {isHU
-                  ? "6 tudományos réteg: fizikai környezeti modell, többszennyezős kimenet, személyre szabott expozíció, biomarker becslés, egészségügyi kockázat és élettartam modell."
-                  : "6 scientific layers: physical environment model, multi-pollutant output, person-specific exposure, biomarker estimation, health risk quantification, and lifetime model."}
+          <div className="section-label">
+            <div className="section-label-bar" />
+            <span className="section-label-txt">
+              Scientific Exposure Engine
+            </span>
+            <div className="section-label-line" />
+          </div>
+
+          <div
+            style={{
+              marginBottom: 36,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div>
+              <h2 className="section-h">Risk Calculator</h2>
+              <p className="section-sub">
+                6 scientific layers: physical model, multi-pollutant output,
+                person-specific exposure, biomarker estimation, health risk,
+                lifetime model.
               </p>
             </div>
-
             <div
-              className="source-note"
               style={{
-                background: "rgba(255,179,71,.06)",
-                border: "1px solid rgba(255,179,71,.2)",
-                borderRadius: 14,
-                padding: "14px 20px",
-                marginBottom: 32,
                 fontFamily: "var(--mono)",
-                fontSize: 12,
-                color: "rgba(255,179,71,.8)",
+                fontSize: 11,
+                color: "var(--dim)",
                 lineHeight: 1.6,
+                textAlign: "right",
+                maxWidth: 280,
               }}
             >
-              {isHU
-                ? "Modell: EPA CONTAM + Repace & Lowrey 1980 + WHO 2010 + Surgeon General 2006 + IARC Vol.83. Minden számítás a böngészőben történik."
-                : "Model: EPA CONTAM + Repace & Lowrey 1980 + WHO 2010 + Surgeon General 2006 + IARC Vol.83. All calculations run locally in your browser — no data transmitted."}
+              Model: EPA CONTAM · Repace &amp; Lowrey 1980
+              <br />
+              WHO 2010 · Surgeon General 2006 · IARC Vol.83
+              <br />
+              <span style={{ color: "var(--teal)", opacity: 0.7 }}>
+                All calculations run locally — no data transmitted
+              </span>
             </div>
+          </div>
 
-            {/* Input grid */}
+          {/* Input grid */}
+          <div className="card" style={{ padding: 28, marginBottom: 20 }}>
             <div
-              className="glass calc-glass"
-              style={{ padding: 36, marginBottom: 24 }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3,1fr)",
+                gap: "16px 20px",
+                marginBottom: 24,
+              }}
+              className="calc-grid"
             >
-              <div
-                className="grid-3"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3,1fr)",
-                  gap: 20,
-                  marginBottom: 28,
-                }}
-              >
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Kitettség évei" : "Years Exposed"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={1}
-                    max={50}
-                    value={years || ""}
-                    onChange={(e) => setYears(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU
-                      ? "Cigaretta/nap (közelben)"
-                      : "Cigarettes/Day Nearby"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={1}
-                    max={60}
-                    value={cigsPerDay || ""}
-                    onChange={(e) => setCigsPerDay(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Dohányzók száma" : "Smokers Present"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={1}
-                    max={10}
-                    value={smokers || ""}
-                    onChange={(e) => setSmokers(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Helyiség mérete (m³)" : "Room Volume (m³)"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={5}
-                    max={500}
-                    step={5}
-                    value={volumeM3 || ""}
-                    onChange={(e) => setVolumeM3(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Szellőztetés" : "Ventilation Type"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={vent}
-                    onChange={(e) => setVent(e.target.value as VentilationType)}
-                  >
-                    <option value="none">
-                      {isHU ? "Nincs (0.3 ACH)" : "None (0.3 ACH)"}
-                    </option>
-                    <option value="natural">
-                      {isHU
-                        ? "Természetes (1.5 ACH)"
-                        : "Natural Draft (1.5 ACH)"}
-                    </option>
-                    <option value="hvac">
-                      {isHU ? "HVAC (4 ACH)" : "Mechanical HVAC (4 ACH)"}
-                    </option>
-                    <option value="hepa">
-                      {isHU ? "HEPA szűrő (8 ACH)" : "HEPA Filtration (8 ACH)"}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Helyiség geometria" : "Room Geometry"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={geo}
-                    onChange={(e) => setGeo(e.target.value as RoomGeometry)}
-                  >
-                    <option value="small_closed">
-                      {isHU ? "Kis zárt szoba" : "Small Closed Room"}
-                    </option>
-                    <option value="medium_room">
-                      {isHU ? "Átlagos szoba" : "Medium Room"}
-                    </option>
-                    <option value="open_plan">
-                      {isHU ? "Nyitott alapterv" : "Open Plan"}
-                    </option>
-                    <option value="outdoor_partial">
-                      {isHU ? "Részben kültéri" : "Partially Outdoor"}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Távolság (m)" : "Distance from Smoker (m)"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={0.5}
-                    max={10}
-                    step={0.5}
-                    value={distM || ""}
-                    onChange={(e) => setDistM(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Hőmérséklet (°C)" : "Temperature (°C)"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={10}
-                    max={40}
-                    value={tempC || ""}
-                    onChange={(e) => setTempC(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Páratartalom (%)" : "Relative Humidity (%)"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={10}
-                    max={95}
-                    step={5}
-                    value={rh || ""}
-                    onChange={(e) => setRh(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Korcsoport" : "Age Group"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={ageGroup}
-                    onChange={(e) => setAgeGroup(e.target.value as AgeGroup)}
-                  >
-                    <option value="infant">
-                      {isHU ? "Csecsemő (0–2)" : "Infant (0–2)"}
-                    </option>
-                    <option value="child">
-                      {isHU ? "Gyermek (3–12)" : "Child (3–12)"}
-                    </option>
-                    <option value="teen">
-                      {isHU ? "Tinédzser (13–17)" : "Teen (13–17)"}
-                    </option>
-                    <option value="adult">
-                      {isHU ? "Felnőtt (18–64)" : "Adult (18–64)"}
-                    </option>
-                    <option value="elderly">
-                      {isHU ? "Idős (65+)" : "Elderly (65+)"}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Aktivitás" : "Activity Level"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={activity}
-                    onChange={(e) =>
-                      setActivity(e.target.value as ActivityLevel)
-                    }
-                  >
-                    <option value="resting">
-                      {isHU ? "Pihenő (0.5 m³/hr)" : "Resting (0.5 m³/hr)"}
-                    </option>
-                    <option value="light">
-                      {isHU ? "Könnyű (0.85 m³/hr)" : "Light (0.85 m³/hr)"}
-                    </option>
-                    <option value="moderate">
-                      {isHU ? "Mérsékelt (2.0 m³/hr)" : "Moderate (2.0 m³/hr)"}
-                    </option>
-                    <option value="heavy">
-                      {isHU ? "Intenzív (3.5 m³/hr)" : "Heavy (3.5 m³/hr)"}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Meglévő állapot" : "Pre-existing Condition"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={condition}
-                    onChange={(e) => setCondition(e.target.value as Condition)}
-                  >
-                    <option value="none">{isHU ? "Nincs" : "None"}</option>
-                    <option value="asthma">
-                      {isHU ? "Asztma (×1.6)" : "Asthma (×1.6)"}
-                    </option>
-                    <option value="copd">
-                      {isHU ? "COPD (×1.8)" : "COPD (×1.8)"}
-                    </option>
-                    <option value="cardiovascular">
-                      {isHU ? "Szívbetegség (×1.4)" : "Cardiovascular (×1.4)"}
-                    </option>
-                    <option value="pregnant">
-                      {isHU ? "Terhesség (×1.3)" : "Pregnant (×1.3)"}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="inp-label">
-                    {isHU ? "Testsúly (kg)" : "Body Weight (kg)"}
-                  </label>
-                  <input
-                    type="number"
-                    className="inp"
-                    min={3}
-                    max={200}
-                    value={weight || ""}
-                    onChange={(e) => setWeight(Number(e.target.value))}
-                  />
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <label className="inp-label">
-                    {isHU
-                      ? "Puha bútorok / szőnyegek?"
-                      : "Soft Furnishings / Carpets?"}
-                  </label>
-                  <select
-                    className="inp"
-                    value={furn ? "yes" : "no"}
-                    onChange={(e) => setFurn(e.target.value === "yes")}
-                  >
-                    <option value="yes">
-                      {isHU
-                        ? "Igen (×1.35 harmadkézifüst)"
-                        : "Yes (×1.35 thirdhand)"}
-                    </option>
-                    <option value="no">{isHU ? "Nem" : "No"}</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 10,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "var(--mono)",
-                      fontSize: 12,
-                      color: "var(--muted)",
-                    }}
-                  >
-                    {isHU ? "Kitettség időtartama" : "Exposure Duration"}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--mono)",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--orange)",
-                    }}
-                  >
-                    {years} {isHU ? "év" : "years"}
-                  </span>
-                </div>
+              {/* Row 1 */}
+              <div className="inp-group">
+                <label className="field-label">Years Exposed</label>
                 <input
-                  type="range"
+                  type="number"
+                  className="inp"
                   min={1}
                   max={50}
-                  value={years}
+                  value={years || ""}
                   onChange={(e) => setYears(Number(e.target.value))}
                 />
               </div>
+              <div className="inp-group">
+                <label className="field-label">Cigarettes / Day Nearby</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={1}
+                  max={60}
+                  value={cigsPerDay || ""}
+                  onChange={(e) => setCigsPerDay(Number(e.target.value))}
+                />
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Smokers Present</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={1}
+                  max={10}
+                  value={smokers || ""}
+                  onChange={(e) => setSmokers(Number(e.target.value))}
+                />
+              </div>
+              {/* Row 2 */}
+              <div className="inp-group">
+                <label className="field-label">Room Volume (m³)</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={5}
+                  max={500}
+                  step={5}
+                  value={volumeM3 || ""}
+                  onChange={(e) => setVolumeM3(Number(e.target.value))}
+                />
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Ventilation Type</label>
+                <select
+                  className="inp"
+                  value={vent}
+                  onChange={(e) => setVent(e.target.value as VentilationType)}
+                >
+                  <option value="none">None (0.3 ACH)</option>
+                  <option value="natural">Natural Draft (1.5 ACH)</option>
+                  <option value="hvac">Mechanical HVAC (4 ACH)</option>
+                  <option value="hepa">HEPA Filtration (8 ACH)</option>
+                </select>
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Room Geometry</label>
+                <select
+                  className="inp"
+                  value={geo}
+                  onChange={(e) => setGeo(e.target.value as RoomGeometry)}
+                >
+                  <option value="small_closed">Small Closed Room</option>
+                  <option value="medium_room">Medium Room</option>
+                  <option value="open_plan">Open Plan</option>
+                  <option value="outdoor_partial">Partially Outdoor</option>
+                </select>
+              </div>
+              {/* Row 3 */}
+              <div className="inp-group">
+                <label className="field-label">Distance from Smoker (m)</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={0.5}
+                  max={10}
+                  step={0.5}
+                  value={distM || ""}
+                  onChange={(e) => setDistM(Number(e.target.value))}
+                />
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Temperature (°C)</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={10}
+                  max={40}
+                  value={tempC || ""}
+                  onChange={(e) => setTempC(Number(e.target.value))}
+                />
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Relative Humidity (%)</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={10}
+                  max={95}
+                  step={5}
+                  value={rh || ""}
+                  onChange={(e) => setRh(Number(e.target.value))}
+                />
+              </div>
+              {/* Row 4 */}
+              <div className="inp-group">
+                <label className="field-label">Age Group</label>
+                <select
+                  className="inp"
+                  value={ageGroup}
+                  onChange={(e) => setAgeGroup(e.target.value as AgeGroup)}
+                >
+                  <option value="infant">Infant (0–2)</option>
+                  <option value="child">Child (3–12)</option>
+                  <option value="teen">Teen (13–17)</option>
+                  <option value="adult">Adult (18–64)</option>
+                  <option value="elderly">Elderly (65+)</option>
+                </select>
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Activity Level</label>
+                <select
+                  className="inp"
+                  value={activity}
+                  onChange={(e) => setActivity(e.target.value as ActivityLevel)}
+                >
+                  <option value="resting">Resting (0.5 m³/hr)</option>
+                  <option value="light">Light (0.85 m³/hr)</option>
+                  <option value="moderate">Moderate (2.0 m³/hr)</option>
+                  <option value="heavy">Heavy (3.5 m³/hr)</option>
+                </select>
+              </div>
+              <div className="inp-group">
+                <label className="field-label">Pre-existing Condition</label>
+                <select
+                  className="inp"
+                  value={condition}
+                  onChange={(e) => setCondition(e.target.value as Condition)}
+                >
+                  <option value="none">None</option>
+                  <option value="asthma">Asthma (×1.6)</option>
+                  <option value="copd">COPD (×1.8)</option>
+                  <option value="cardiovascular">Cardiovascular (×1.4)</option>
+                  <option value="pregnant">Pregnant (×1.3)</option>
+                </select>
+              </div>
+              {/* Row 5 */}
+              <div className="inp-group">
+                <label className="field-label">Body Weight (kg)</label>
+                <input
+                  type="number"
+                  className="inp"
+                  min={3}
+                  max={200}
+                  value={weight || ""}
+                  onChange={(e) => setWeight(Number(e.target.value))}
+                />
+              </div>
+              <div className="inp-group">
+                <label className="field-label">
+                  Soft Furnishings / Carpets
+                </label>
+                <select
+                  className="inp"
+                  value={furn ? "yes" : "no"}
+                  onChange={(e) => setFurn(e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (×1.35 thirdhand)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
             </div>
 
-            {/* ── RESULTS ── */}
-            {result && (
-              <>
+            {/* Exposure duration slider */}
+            <div
+              style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 10,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                    color: "var(--muted)",
+                  }}
+                >
+                  Exposure Duration
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "var(--teal)",
+                  }}
+                >
+                  {years} years
+                </span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={50}
+                value={years}
+                onChange={(e) => setYears(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          {/* ── RESULTS ─────────────────────────────────────── */}
+          {result && (
+            <>
+              {/* Cotinine hero readout */}
+              <div
+                className="card"
+                style={{ marginBottom: 16, overflow: "hidden" }}
+              >
+                <div className="cotinine-block">
+                  <div className="cotinine-eyebrow">
+                    Estimated Serum Cotinine · Clinical Biomarker
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <span className="cotinine-num" style={{ color: bioColor }}>
+                      {result.biomarker.serumNgMl.toFixed(3)}
+                      <span className="cotinine-unit">ng/mL</span>
+                    </span>
+                    <span
+                      className="cotinine-tag"
+                      style={{
+                        background: `${bioColor}16`,
+                        color: bioColor,
+                        border: `1px solid ${bioColor}33`,
+                      }}
+                    >
+                      {result.biomarker.label.EN}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      marginTop: 10,
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      lineHeight: 1.65,
+                      maxWidth: 520,
+                    }}
+                  >
+                    {result.biomarker.note.EN}
+                  </p>
+                  <div className="cotinine-ref">
+                    {"< 0.05"} — Background &nbsp;·&nbsp;
+                    {"0.05–1.0"} — Low SHS &nbsp;·&nbsp;
+                    <span style={{ color: "#fb923c" }}>
+                      {"1.0–10"} — Moderate ⚠
+                    </span>{" "}
+                    &nbsp;·&nbsp;
+                    <span style={{ color: "var(--red)" }}>{"> 10"} — High</span>
+                    &nbsp;&nbsp;
+                    <span style={{ color: "var(--dim)", fontSize: 9 }}>
+                      CDC NHANES
+                    </span>
+                  </div>
+                </div>
+
                 {/* Key stats */}
                 <div
-                  className="grid-3"
+                  className="results-grid-3"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(3,1fr)",
-                    gap: 16,
-                    marginBottom: 24,
+                    gap: 1,
+                    background: "var(--border)",
                   }}
                 >
                   {[
                     {
-                      icon: "🚬",
-                      label: isHU
-                        ? "Egyenértékű cig/nap"
-                        : "Equiv. Cigarettes/Day",
+                      label: "Equiv. Cigarettes / Day",
                       value: result.equivCigs.toFixed(3),
-                      color: "var(--orange)",
                       note: "PM₂.₅ basis",
+                      color: "#fb923c",
                     },
                     {
-                      icon: "📦",
-                      label: isHU
-                        ? "Élettartam csomag-évek"
-                        : "Lifetime Pack-Years",
+                      label: "Lifetime Pack-Years",
                       value: result.equivPackYears.toFixed(2),
-                      color: "var(--amber)",
-                      note: isHU ? "dohányos egyenértékű" : "smoker equivalent",
+                      note: "smoker equiv.",
+                      color: "#f59e0b",
                     },
                     {
-                      icon: "⏱️",
-                      label: isHU
-                        ? "Biztonságos újrabalépés"
-                        : "Safe Re-entry Time",
+                      label: "Safe Re-entry Time",
                       value:
                         result.safeReentryMin > 0
                           ? `${result.safeReentryMin} min`
                           : "✓ Safe",
-                      color: result.safeReentryMin > 0 ? "#ef4444" : "#4ade80",
                       note: "WHO PM₂.₅",
+                      color:
+                        result.safeReentryMin > 0
+                          ? "var(--red)"
+                          : "var(--teal)",
                     },
-                  ].map(({ icon, label, value, color, note }) => (
-                    <div key={label} className="stat-card">
-                      <div style={{ fontSize: 22, marginBottom: 12 }}>
-                        {icon}
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: "var(--mono)",
-                          fontSize: 10,
-                          color: "var(--muted)",
-                          letterSpacing: ".1em",
-                          textTransform: "uppercase",
-                          marginBottom: 8,
-                        }}
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      className="stat-cell"
+                      style={{ background: "var(--card)" }}
+                    >
+                      <span className="stat-cell-label">{s.label}</span>
+                      <span
+                        className="stat-cell-val"
+                        style={{ color: s.color }}
                       >
-                        {label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "clamp(22px,3vw,32px)",
-                          fontWeight: 800,
-                          color,
-                          letterSpacing: "-.03em",
-                          lineHeight: 1,
-                        }}
-                      >
-                        {value}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: "var(--muted)",
-                          marginTop: 6,
-                          fontFamily: "var(--mono)",
-                        }}
-                      >
-                        {note}
-                      </div>
+                        {s.value}
+                      </span>
+                      <span className="stat-cell-note">{s.note}</span>
                     </div>
                   ))}
                 </div>
-
-                {/* ── SHARE CARD CTA ── */}
-                <div
-                  className="glass"
-                  style={{
-                    padding: "24px 28px",
-                    marginBottom: 24,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 16,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 15,
-                        letterSpacing: "-.01em",
-                        marginBottom: 4,
-                        color: "var(--color)",
-                      }}
-                    >
-                      {isHU
-                        ? "Osztd meg az eredményeidet"
-                        : "Share your exposure results"}
-                    </div>
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: "var(--muted)",
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {isHU
-                        ? `Kotinin: ${result.biomarker.serumNgMl.toFixed(2)} ng/mL · ${result.biomarker.label.HU}`
-                        : `Cotinine: ${result.biomarker.serumNgMl.toFixed(2)} ng/mL · ${result.biomarker.label.EN}`}
-                    </p>
-                  </div>
-                  <button
-                    className="share-btn"
-                    onClick={() => setShareOpen(true)}
-                  >
-                    📤 {isHU ? "Kártya létrehozása" : "Create Share Card"}
-                  </button>
-                </div>
-
-                {/* Cotinine biomarker */}
-                <div
-                  className="glass"
-                  style={{
-                    padding: 28,
-                    marginBottom: 24,
-                    borderLeft: `3px solid ${bioColor}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: 16,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontFamily: "var(--mono)",
-                          fontSize: 10,
-                          color: "var(--muted)",
-                          letterSpacing: ".12em",
-                          textTransform: "uppercase",
-                          marginBottom: 8,
-                        }}
-                      >
-                        🧬{" "}
-                        {isHU
-                          ? "Becsült Szérum Kotinin · Klinikai Biomarker"
-                          : "Estimated Serum Cotinine · Clinical Biomarker"}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "baseline",
-                          gap: 12,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "clamp(28px,4vw,42px)",
-                            fontWeight: 800,
-                            letterSpacing: "-.03em",
-                            color: bioColor,
-                          }}
-                        >
-                          {result.biomarker.serumNgMl.toFixed(3)}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: "var(--mono)",
-                            fontSize: 13,
-                            color: "var(--muted)",
-                          }}
-                        >
-                          ng/mL
-                        </span>
-                        <span
-                          style={{
-                            padding: "3px 10px",
-                            borderRadius: 100,
-                            fontSize: 10,
-                            fontFamily: "var(--mono)",
-                            fontWeight: 700,
-                            background: `${bioColor}22`,
-                            color: bioColor,
-                          }}
-                        >
-                          {isHU
-                            ? result.biomarker.label.HU
-                            : result.biomarker.label.EN}
-                        </span>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted)",
-                          lineHeight: 1.6,
-                          maxWidth: 480,
-                        }}
-                      >
-                        {isHU
-                          ? result.biomarker.note.HU
-                          : result.biomarker.note.EN}
-                      </p>
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 11,
-                        color: "var(--muted)",
-                        lineHeight: 1.8,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div>
-                        {"<0.05"} — {isHU ? "Háttér" : "Background"}
-                      </div>
-                      <div>
-                        {"0.05–1.0"} — {isHU ? "Alacsony" : "Low SHS"}
-                      </div>
-                      <div style={{ color: "var(--orange)" }}>
-                        {"1.0–10"} — {isHU ? "Mérsékelt ⚠" : "Moderate ⚠"}
-                      </div>
-                      <div style={{ color: "#ef4444" }}>
-                        {">10"} — {isHU ? "Magas" : "High"}
-                      </div>
-                      <div
-                        style={{
-                          opacity: 0.5,
-                          fontSize: 10,
-                          marginTop: 4,
-                          color: "var(--white)",
-                        }}
-                      >
-                        CDC NHANES
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Multi-pollutant table */}
-                <div
-                  className="glass"
-                  style={{ overflow: "hidden", marginBottom: 24 }}
-                >
-                  <div
-                    style={{
-                      padding: "20px 28px 16px",
-                      borderBottom: "1px solid var(--border)",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 700,
-                        letterSpacing: "-.02em",
-                        color: "var(--color)",
-                      }}
-                    >
-                      ⚗️{" "}
-                      {isHU
-                        ? "Többszennyezős Dózis Analízis"
-                        : "Multi-Pollutant Dose Analysis"}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        fontFamily: "var(--mono)",
-                        marginTop: 4,
-                      }}
-                    >
-                      {isHU
-                        ? "Becsült belélegzett dózis per vegyület — napi expozíció"
-                        : "Estimated inhaled dose per compound — daily exposure scenario"}
-                    </p>
-                  </div>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr
-                        className="chem-table-header"
-                        style={{
-                          background: "rgba(255,255,255,.03)",
-                          borderBottom: "1px solid var(--border)",
-                        }}
-                      >
-                        {[
-                          isHU ? "Vegyület" : "Compound",
-                          isHU ? "Szimbólum" : "Symbol",
-                          isHU ? "Napi dózis" : "Daily Dose",
-                          isHU ? "Limit %" : "% of Limit",
-                          isHU ? "Hatás" : "Health Effect",
-                        ].map((h, i) => (
-                          <th
-                            key={i}
-                            style={{
-                              padding: "12px 16px",
-                              textAlign: i > 1 ? "center" : "left",
-                              fontFamily: "var(--mono)",
-                              fontSize: 10,
-                              letterSpacing: ".12em",
-                              color: "var(--muted)",
-                              fontWeight: 500,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.pollutants.map((p, i) => (
-                        <tr
-                          key={p.symbol}
-                          className="chem-row"
-                          style={{
-                            borderBottom:
-                              i < result.pollutants.length - 1
-                                ? "1px solid var(--border)"
-                                : "none",
-                          }}
-                        >
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              fontWeight: 700,
-                              fontSize: 13,
-                              color: p.color,
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: "50%",
-                                  background: p.color,
-                                  flexShrink: 0,
-                                }}
-                              />
-                              {p.name}
-                            </div>
-                          </td>
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              fontFamily: "var(--mono)",
-                              fontSize: 12,
-                              color: p.color,
-                              textAlign: "center",
-                            }}
-                          >
-                            {p.symbol}
-                          </td>
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              fontFamily: "var(--mono)",
-                              fontSize: 12,
-                              textAlign: "center",
-                              color:
-                                p.doseUg > 0 ? "var(--color)" : "var(--muted)",
-                            }}
-                          >
-                            {p.doseUg < 0.01
-                              ? p.doseUg.toExponential(2)
-                              : p.doseUg.toFixed(2)}{" "}
-                            μg
-                          </td>
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              textAlign: "center",
-                            }}
-                          >
-                            {p.percentOfLimit !== null ? (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: 64,
-                                    height: 4,
-                                    borderRadius: 2,
-                                    background: "rgba(255,255,255,.1)",
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      height: "100%",
-                                      width: `${Math.min(100, p.percentOfLimit)}%`,
-                                      background:
-                                        p.percentOfLimit > 100
-                                          ? "#ef4444"
-                                          : p.percentOfLimit > 50
-                                            ? "#f97316"
-                                            : "#4ade80",
-                                      borderRadius: 2,
-                                    }}
-                                  />
-                                </div>
-                                <span
-                                  style={{
-                                    fontFamily: "var(--mono)",
-                                    fontSize: 10,
-                                    color:
-                                      p.percentOfLimit > 100
-                                        ? "#ef4444"
-                                        : "var(--muted)",
-                                  }}
-                                >
-                                  {p.percentOfLimit.toFixed(1)}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span
-                                style={{
-                                  fontFamily: "var(--mono)",
-                                  fontSize: 10,
-                                  color: "#ef4444",
-                                }}
-                              >
-                                No safe level
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              fontSize: 11,
-                              color: "var(--muted)",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            {p.healthEffect}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Health risks */}
-                <div
-                  className="glass"
-                  style={{ padding: 28, marginBottom: 24 }}
-                >
-                  <h3
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      letterSpacing: "-.02em",
-                      marginBottom: 20,
-                      color: "var(--color)",
-                    }}
-                  >
-                    🫀{" "}
-                    {isHU
-                      ? "Egészségügyi Kockázat Elemzés"
-                      : "Health Risk Quantification"}
-                  </h3>
-                  <div style={{ display: "grid", gap: 16 }}>
-                    {result.risks.map((r) => (
-                      <div
-                        key={r.condition}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 16,
-                          flexWrap: "wrap",
-                          color:
-                            r.rrIncrease > 1.5 ? "#ef4444" : "var(--color)",
-                        }}
-                      >
-                        <div style={{ flex: "0 0 200px" }}>
-                          <div style={{ fontSize: 13, fontWeight: 700 }}>
-                            {isHU ? r.conditionHU : r.condition}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "var(--muted)",
-                              fontFamily: "var(--mono)",
-                              marginTop: 2,
-                            }}
-                          >
-                            {r.affectsGroup} · {r.source}
-                          </div>
-                        </div>
-                        <div style={{ flex: "0 0 80px", textAlign: "center" }}>
-                          <div
-                            style={{
-                              fontSize: 20,
-                              fontWeight: 800,
-                              color:
-                                r.rrIncrease > 1.5
-                                  ? "#ef4444"
-                                  : r.rrIncrease > 1.2
-                                    ? "#f97316"
-                                    : "#f59e0b",
-                            }}
-                          >
-                            ×{r.rrIncrease.toFixed(2)}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "var(--muted)",
-                              fontFamily: "var(--mono)",
-                            }}
-                          >
-                            RR
-                          </div>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 160 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: 4,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontFamily: "var(--mono)",
-                                fontSize: 10,
-                                color: "var(--muted)",
-                              }}
-                            >
-                              {isHU ? "Alapkockázat" : "Baseline"}:{" "}
-                              {r.baselineRisk}%
-                            </span>
-                            <span
-                              style={{
-                                fontFamily: "var(--mono)",
-                                fontSize: 10,
-                                color: "var(--color)",
-                              }}
-                            >
-                              +{r.absolutePct.toFixed(2)}%
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              width: "100%",
-                              height: 6,
-                              borderRadius: 3,
-                              background: "var(--border)",
-                              overflow: "hidden",
-                              position: "relative",
-                            }}
-                          >
-                            <div
-                              style={{
-                                position: "absolute",
-                                left: 0,
-                                top: 0,
-                                height: "100%",
-                                width: `${Math.min(100, (r.baselineRisk / 20) * 100)}%`,
-                                background: "var(--muted)",
-                                borderRadius: 3,
-                              }}
-                            />
-                            <div
-                              style={{
-                                position: "absolute",
-                                left: `${Math.min(100, (r.baselineRisk / 20) * 100)}%`,
-                                top: 0,
-                                height: "100%",
-                                width: `${Math.min(100 - (r.baselineRisk / 20) * 100, (r.absolutePct / 20) * 100)}%`,
-                                background: "#ef4444",
-                                borderRadius: 3,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: "var(--muted)",
-                      fontFamily: "var(--mono)",
-                      marginTop: 16,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    * RR ={" "}
-                    {isHU
-                      ? "relatív kockázat. Meta-analíziseken alapul. Nem diagnosztikai eszköz."
-                      : "relative risk multiplier. Based on published meta-analyses. Not a diagnostic tool."}
-                  </p>
-                </div>
-
-                {/* PM2.5 + Thirdhand */}
-                <div
-                  className="grid-2"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 16,
-                    marginBottom: 24,
-                  }}
-                >
-                  <div className="glass" style={{ padding: 24 }}>
-                    <div
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 10,
-                        color: "var(--muted)",
-                        letterSpacing: ".12em",
-                        textTransform: "uppercase",
-                        marginBottom: 12,
-                      }}
-                    >
-                      📊{" "}
-                      {isHU ? "Légköri PM₂.₅" : "Ambient PM₂.₅ Concentration"}
-                    </div>
-                    <div style={{ display: "flex", gap: 24 }}>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 28,
-                            fontWeight: 800,
-                            color:
-                              result.peakPm25 > 150
-                                ? "#ef4444"
-                                : result.peakPm25 > 55
-                                  ? "#f97316"
-                                  : "#f59e0b",
-                            letterSpacing: "-.03em",
-                          }}
-                        >
-                          {result.peakPm25}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "var(--muted)",
-                            fontFamily: "var(--mono)",
-                          }}
-                        >
-                          μg/m³ peak
-                        </div>
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 28,
-                            fontWeight: 800,
-                            color: "var(--amber)",
-                            letterSpacing: "-.03em",
-                          }}
-                        >
-                          {result.avgPm25}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "var(--muted)",
-                            fontFamily: "var(--mono)",
-                          }}
-                        >
-                          μg/m³ avg
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 12,
-                        fontFamily: "var(--mono)",
-                        fontSize: 11,
-                        color: "var(--muted)",
-                      }}
-                    >
-                      WHO 24h: 15 μg/m³ ·{" "}
-                      {isHU ? "Az Ön szintje" : "Your level"}:{" "}
-                      {((result.avgPm25 / 15) * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                  <div className="glass" style={{ padding: 24 }}>
-                    <div
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 10,
-                        color: "var(--muted)",
-                        letterSpacing: ".12em",
-                        textTransform: "uppercase",
-                        marginBottom: 12,
-                      }}
-                    >
-                      🧱{" "}
-                      {isHU
-                        ? "Harmadkézifüst Terhelés"
-                        : "Thirdhand Smoke Load"}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color:
-                          result.thirdhand > 60
-                            ? "#ef4444"
-                            : result.thirdhand > 30
-                              ? "#f97316"
-                              : "#f59e0b",
-                        letterSpacing: "-.03em",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {result.thirdhand}
-                      <span
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 400,
-                          color: "var(--muted)",
-                        }}
-                      >
-                        /100
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        width: "100%",
-                        height: 6,
-                        borderRadius: 3,
-                        background: "rgba(255,255,255,.08)",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${result.thirdhand}%`,
-                          background: `linear-gradient(90deg,#f59e0b,${result.thirdhand > 60 ? "#ef4444" : "#f97316"})`,
-                          borderRadius: 3,
-                          transition: "width .5s ease",
-                        }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 10,
-                        fontSize: 11,
-                        color: "var(--muted)",
-                        fontFamily: "var(--mono)",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {isHU
-                        ? "Felületi nikotinkibocsátás dohányzás után."
-                        : "Surface nicotine re-emission after smoking."}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* ── CHART ── */}
-        <section style={{ padding: "0 24px 100px" }}>
-          <div className="container">
-            <div className="glass" style={{ padding: "36px" }}>
-              <div style={{ marginBottom: 28 }}>
-                <h3
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    letterSpacing: "-.02em",
-                    marginBottom: 6,
-                    color: "var(--color)",
-                  }}
-                >
-                  {isHU
-                    ? "Kumulatív Kitettség az Idő Függvényében"
-                    : "Cumulative Exposure Over Time"}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: 12,
-                    color: "var(--muted)",
-                  }}
-                >
-                  {isHU
-                    ? `${years} éves periódus · PM₂.₅ alapú egyenértékű cigaretták`
-                    : `${years}-year period · PM₂.₅-based equivalent cigarettes`}
-                </p>
               </div>
-              <div style={{ height: 280 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient
-                        id="gradOrange"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#ff5c1a"
-                          stopOpacity={0.6}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#ff5c1a"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="year"
-                      stroke="var(--muted)"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      fontFamily="var(--mono)"
-                    />
-                    <YAxis
-                      stroke="var(--muted)"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      fontFamily="var(--mono)"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--background)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        fontFamily: "var(--mono)",
-                        fontSize: 12,
-                      }}
-                      itemStyle={{ color: "var(--orange)" }}
-                      labelStyle={{ color: "var(--muted)" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="cigs"
-                      stroke="#ff5c1a"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#gradOrange)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ── HEALTH TIMELINE ── */}
-        {result && result.timeline.length > 0 && (
-          <section style={{ padding: "0 24px 100px" }}>
-            <div className="container">
-              <div style={{ marginBottom: 32, textAlign: "center" }}>
-                <h3
-                  style={{
-                    fontSize: "clamp(22px,3vw,36px)",
-                    fontWeight: 800,
-                    letterSpacing: "-.02em",
-                    color: "var(--color)",
-                  }}
-                >
-                  🗓 {isHU ? "Egészségügyi Idővonal" : "Health Timeline"}
-                </h3>
-                <p
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 13,
-                    marginTop: 8,
-                    fontFamily: "var(--mono)",
-                  }}
-                >
-                  {isHU
-                    ? `${years} éves kitettség · [SG06] + [IARC]`
-                    : `Based on ${years} years of exposure · [SG06] + [IARC]`}
-                </p>
-              </div>
+              {/* Share CTA */}
               <div
-                className="grid-2"
+                className="card"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2,1fr)",
+                  padding: "18px 24px",
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
                   gap: 12,
                 }}
               >
-                {result.timeline.map((item, i) => (
+                <div>
                   <div
-                    key={i}
-                    className="glass"
                     style={{
-                      padding: "20px 24px",
-                      borderLeft: `3px solid ${item.color}`,
-                      borderRadius: "0 16px 16px 0",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      letterSpacing: "-.01em",
+                      marginBottom: 3,
                     }}
                   >
-                    <div
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 11,
-                        color: item.color,
-                        letterSpacing: ".1em",
-                        marginBottom: 6,
-                      }}
-                    >
-                      {isHU ? `${item.year}. év` : `Year ${item.year}`}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        color: "var(--color)",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {isHU ? item.event.HU : item.event.EN}
-                    </div>
+                    Share your exposure results
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ── CHEMICALS ── */}
-        <section id="chemicals" style={{ padding: "0 24px 100px" }}>
-          <div className="container">
-            <div style={{ marginBottom: 48, textAlign: "center" }}>
-              <div className="badge" style={{ marginBottom: 20 }}>
-                ⚗️ {isHU ? "Toxikológia" : "Toxicology"}
-              </div>
-              <h2
-                style={{
-                  fontSize: "clamp(28px,4vw,48px)",
-                  fontWeight: 800,
-                  letterSpacing: "-.03em",
-                  color: "var(--color)",
-                }}
-              >
-                {isHU ? "A kémiai terhelés" : "The Chemical Payload"}
-              </h2>
-              <p
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 14,
-                  marginTop: 10,
-                  fontFamily: "var(--mono)",
-                }}
-              >
-                {isHU
-                  ? "Oldalsugár füstben (magasabb koncentrációban jelenlévő vegyületek)"
-                  : "Found in sidestream smoke at higher concentrations"}
-              </p>
-            </div>
-            <div className="glass" style={{ overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr
-                    className="chem-table-header"
+                  <div
                     style={{
-                      background: "rgba(255,255,255,.03)",
-                      borderBottom: "1px solid var(--border)",
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                      color: "var(--dim)",
                     }}
                   >
-                    {[
-                      "Chemical",
-                      isHU ? "Ipari felhasználás" : "Industrial Use",
-                      isHU ? "Toxicitás" : "Toxicity",
-                      "",
-                    ].map((h, i) => (
-                      <th
-                        key={i}
-                        style={{
-                          padding: "16px 20px",
-                          textAlign:
-                            i === 2 ? "center" : i === 3 ? "right" : "left",
-                          fontFamily: "var(--mono)",
-                          fontSize: 10,
-                          letterSpacing: ".15em",
-                          color: "var(--muted)",
-                          fontWeight: 500,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(CHEMICALS).map(([name, data], i) => (
-                    <tr
-                      key={name}
-                      className="chem-row"
-                      style={{
-                        borderBottom:
-                          i < 4 ? "1px solid var(--border)" : "none",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "20px",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: "var(--color)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: "50%",
-                              background:
-                                TOXICITY_COLORS[
-                                  data.level as keyof typeof TOXICITY_COLORS
-                                ],
-                              ...(name === "Polonium-210"
-                                ? { animation: "radioactive 1s infinite" }
-                                : {}),
-                            }}
-                          />
-                          {name}
-                        </div>
-                      </td>
-                      <td
-                        style={{
-                          padding: "20px",
-                          fontFamily: "var(--mono)",
-                          fontSize: 12,
-                          color: "var(--muted)",
-                        }}
-                      >
-                        {isHU ? data.use.HU : data.use.EN}
-                      </td>
-                      <td style={{ padding: "20px", textAlign: "center" }}>
-                        <span
-                          style={{
-                            padding: "4px 12px",
-                            borderRadius: 100,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            fontFamily: "var(--mono)",
-                            background: `${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}20`,
-                            color:
-                              TOXICITY_COLORS[
-                                data.level as keyof typeof TOXICITY_COLORS
-                              ],
-                            border: `1px solid ${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}40`,
-                          }}
-                        >
-                          {isHU ? data.toxicity.HU : data.toxicity.EN}
-                        </span>
-                      </td>
-                      <td style={{ padding: "20px", textAlign: "right" }}>
-                        <button
-                          onClick={() => {
-                            setSelectedChem(name);
-                            setModalOpen(true);
-                          }}
-                          style={{
-                            background: "rgba(255,255,255,.05)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 8,
-                            padding: "6px 14px",
-                            color: "var(--color)",
-                            fontSize: 12,
-                            cursor: "pointer",
-                            fontFamily: "var(--mono)",
-                          }}
-                          onMouseOver={(e) =>
-                            ((e.target as HTMLElement).style.background =
-                              "rgba(255,92,26,.15)")
-                          }
-                          onMouseOut={(e) =>
-                            ((e.target as HTMLElement).style.background =
-                              "rgba(255,255,255,.05)")
-                          }
-                        >
-                          {isHU ? "részletek →" : "details →"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+                    Cotinine: {result.biomarker.serumNgMl.toFixed(2)} ng/mL ·{" "}
+                    {result.biomarker.label.EN}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShareOpen(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 20px",
+                    borderRadius: 7,
+                    background: "transparent",
+                    border: "1px solid var(--bord2)",
+                    color: "var(--white)",
+                    fontFamily: "var(--sans)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    letterSpacing: "-.01em",
+                    transition: "border-color .15s, background .15s",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = "var(--teal)";
+                    e.currentTarget.style.background = "var(--teal-d)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = "var(--bord2)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  📤 Create Share Card
+                </button>
+              </div>
 
-        {/* ── FAQ ── */}
-        <section style={{ padding: "0 24px 100px" }}>
-          <div className="container">
-            <h2
-              style={{
-                fontSize: "clamp(28px,4vw,48px)",
-                fontWeight: 800,
-                letterSpacing: "-.03em",
-                marginBottom: 40,
-                textAlign: "center",
-                color: "var(--color)",
-              }}
-            >
-              {isHU ? "Gyakori kérdések" : "FAQ"}
-            </h2>
-            <div style={{ display: "grid", gap: 12, color: "var(--color)" }}>
-              {(isHU
-                ? [
-                    {
-                      q: "Valóban veszélyes a passzív dohányzás?",
-                      a: "Igen. Nincs biztonságos kitettségi szint. Több ezer vegyi anyagot tartalmaz, melyek közül sok mérgező vagy rákkeltő. A passzív dohányzás növeli a tüdőrák, szívbetegség és légzőszervi problémák kockázatát minden korosztályban.",
-                    },
-                    {
-                      q: "Eltávolítható-e a füst légtisztítóval?",
-                      a: "A légtisztítók csökkenthetik néhány részecskét, de nem távolítják el az összes toxint vagy gázt a dohányfüstből. A teljes védelemhez csak a füstmentes környezet biztosít megoldást.",
-                    },
-                    {
-                      q: "Hogyan védhetem meg a családomat?",
-                      a: "Tedd füstmentessé otthonod és autód, bátorítsd a dohányzókat a leszokásra, és kerüld a dohányzó helyeket. A gyermekek és idősek különösen érzékenyek a passzív dohányzásra.",
-                    },
-                  ]
-                : [
-                    {
-                      q: "Is secondhand smoke really dangerous?",
-                      a: "Yes. There is no safe level of exposure. It contains thousands of chemicals, many of which are toxic or carcinogenic. Secondhand smoke increases the risk of lung cancer, heart disease, and respiratory problems for all ages.",
-                    },
-                    {
-                      q: "Can air purifiers eliminate secondhand smoke?",
-                      a: "Air purifiers may reduce some particles, but cannot remove all toxins or gases. Only a smoke-free environment provides full protection.",
-                    },
-                    {
-                      q: "What are the best ways to protect my family?",
-                      a: "Make your home and car smoke-free, encourage smokers to quit, and avoid places where smoking occurs. Children and the elderly are especially vulnerable to secondhand smoke.",
-                    },
-                  ]
-              ).map(({ q, a }, i) => (
-                <div key={i} className="glass" style={{ padding: "24px 28px" }}>
+              {/* Multi-pollutant table */}
+              <div
+                className="card"
+                style={{ marginBottom: 16, overflow: "hidden" }}
+              >
+                <div
+                  style={{
+                    padding: "20px 24px 16px",
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                >
                   <div
                     style={{
                       fontWeight: 700,
                       fontSize: 15,
-                      marginBottom: 10,
-                      letterSpacing: "-.01em",
+                      letterSpacing: "-.02em",
+                      marginBottom: 3,
                     }}
                   >
-                    {q}
+                    Multi-Pollutant Dose Analysis
                   </div>
                   <div
                     style={{
-                      color: "var(--muted)",
-                      fontSize: 14,
-                      lineHeight: 1.7,
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      color: "var(--dim)",
                     }}
                   >
-                    {a}
+                    Estimated inhaled dose per compound — daily exposure
+                    scenario
                   </div>
+                </div>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      {[
+                        "Compound",
+                        "Symbol",
+                        "Daily Dose",
+                        "% of Limit",
+                        "Health Effect",
+                      ].map((h, i) => (
+                        <th
+                          key={h}
+                          style={{ textAlign: i > 1 ? "center" : "left" }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.pollutants.map((p) => (
+                      <tr key={p.symbol}>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: "50%",
+                                background: p.color,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              style={{ fontWeight: 600, color: "var(--white)" }}
+                            >
+                              {p.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td
+                          style={{
+                            textAlign: "center",
+                            fontFamily: "var(--mono)",
+                            fontSize: 12,
+                            color: p.color,
+                          }}
+                        >
+                          {p.symbol}
+                        </td>
+                        <td
+                          style={{
+                            textAlign: "center",
+                            fontFamily: "var(--mono)",
+                            fontSize: 12,
+                            color: "var(--white)",
+                          }}
+                        >
+                          {p.doseUg < 0.01
+                            ? p.doseUg.toExponential(2)
+                            : p.doseUg.toFixed(2)}{" "}
+                          μg
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          {p.percentOfLimit !== null ? (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <div
+                                className="risk-bar-bg"
+                                style={{ width: 60 }}
+                              >
+                                <div
+                                  className="risk-bar-fill"
+                                  style={{
+                                    width: `${Math.min(100, p.percentOfLimit)}%`,
+                                    background:
+                                      p.percentOfLimit > 100
+                                        ? "var(--red)"
+                                        : p.percentOfLimit > 50
+                                          ? "#fb923c"
+                                          : "var(--teal)",
+                                  }}
+                                />
+                              </div>
+                              <span
+                                style={{
+                                  fontFamily: "var(--mono)",
+                                  fontSize: 10,
+                                  color:
+                                    p.percentOfLimit > 100
+                                      ? "var(--red)"
+                                      : "var(--dim)",
+                                }}
+                              >
+                                {p.percentOfLimit.toFixed(1)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span
+                              style={{
+                                fontFamily: "var(--mono)",
+                                fontSize: 10,
+                                color: "var(--red)",
+                              }}
+                            >
+                              no safe level
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: 12,
+                            color: "var(--muted)",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {p.healthEffect}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Health risks */}
+              <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 15,
+                    letterSpacing: "-.02em",
+                    marginBottom: 20,
+                  }}
+                >
+                  Health Risk Quantification
+                </div>
+                <div style={{ display: "grid", gap: 16 }}>
+                  {result.risks.map((r) => (
+                    <div
+                      key={r.condition}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div style={{ flex: "0 0 200px" }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            letterSpacing: "-.01em",
+                            color: "var(--white)",
+                            marginBottom: 2,
+                          }}
+                        >
+                          {r.condition}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 9,
+                            color: "var(--dim)",
+                            letterSpacing: ".08em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {r.affectsGroup} · {r.source}
+                        </div>
+                      </div>
+                      <div style={{ flex: "0 0 64px", textAlign: "center" }}>
+                        <div
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 18,
+                            fontWeight: 500,
+                            color:
+                              r.rrIncrease > 1.5
+                                ? "var(--red)"
+                                : r.rrIncrease > 1.2
+                                  ? "#fb923c"
+                                  : "var(--amber)",
+                            lineHeight: 1,
+                          }}
+                        >
+                          ×{r.rrIncrease.toFixed(2)}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 9,
+                            color: "var(--dim)",
+                            marginTop: 2,
+                          }}
+                        >
+                          RR
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 160 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: 5,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: "var(--mono)",
+                              fontSize: 10,
+                              color: "var(--dim)",
+                            }}
+                          >
+                            Baseline: {r.baselineRisk}%
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: "var(--mono)",
+                              fontSize: 10,
+                              color: "var(--red)",
+                            }}
+                          >
+                            +{r.absolutePct.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="risk-bar-bg">
+                          <div
+                            className="risk-bar-fill"
+                            style={{
+                              width: `${Math.min(100, (r.baselineRisk / 20) * 100)}%`,
+                              background: "rgba(255,255,255,.15)",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 10,
+                    color: "var(--dim)",
+                    marginTop: 16,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  * RR = relative risk multiplier. Based on published
+                  meta-analyses. Not a diagnostic tool.
+                </div>
+              </div>
+
+              {/* PM2.5 + Thirdhand */}
+              <div
+                className="results-grid-2"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                  marginBottom: 16,
+                }}
+              >
+                <div className="card" style={{ padding: 24 }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 9,
+                      color: "var(--dim)",
+                      letterSpacing: ".14em",
+                      textTransform: "uppercase",
+                      marginBottom: 12,
+                    }}
+                  >
+                    Ambient PM₂.₅ Concentration
+                  </div>
+                  <div style={{ display: "flex", gap: 32, marginBottom: 10 }}>
+                    {[
+                      {
+                        val: result.peakPm25,
+                        label: "μg/m³ peak",
+                        color:
+                          result.peakPm25 > 150
+                            ? "var(--red)"
+                            : result.peakPm25 > 55
+                              ? "#fb923c"
+                              : "var(--amber)",
+                      },
+                      {
+                        val: result.avgPm25,
+                        label: "μg/m³ avg",
+                        color: "var(--amber)",
+                      },
+                    ].map((s) => (
+                      <div key={s.label}>
+                        <div
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 28,
+                            fontWeight: 500,
+                            color: s.color,
+                            letterSpacing: "-.02em",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {s.val}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 10,
+                            color: "var(--dim)",
+                            marginTop: 4,
+                          }}
+                        >
+                          {s.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      color: "var(--dim)",
+                    }}
+                  >
+                    WHO 24h limit: 15 μg/m³ · Your level:{" "}
+                    {((result.avgPm25 / 15) * 100).toFixed(0)}%
+                  </div>
+                </div>
+                <div className="card" style={{ padding: 24 }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 9,
+                      color: "var(--dim)",
+                      letterSpacing: ".14em",
+                      textTransform: "uppercase",
+                      marginBottom: 12,
+                    }}
+                  >
+                    Thirdhand Smoke Load
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 28,
+                      fontWeight: 500,
+                      letterSpacing: "-.02em",
+                      lineHeight: 1,
+                      marginBottom: 4,
+                      color:
+                        result.thirdhand > 60
+                          ? "var(--red)"
+                          : result.thirdhand > 30
+                            ? "#fb923c"
+                            : "var(--amber)",
+                    }}
+                  >
+                    {result.thirdhand}
+                    <span style={{ fontSize: 14, color: "var(--dim)" }}>
+                      /100
+                    </span>
+                  </div>
+                  <div className="risk-bar-bg" style={{ marginBottom: 10 }}>
+                    <div
+                      className="risk-bar-fill"
+                      style={{
+                        width: `${result.thirdhand}%`,
+                        background: `linear-gradient(90deg, var(--amber), ${result.thirdhand > 60 ? "var(--red)" : "#fb923c"})`,
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      color: "var(--dim)",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Surface nicotine re-emission after smoking ends.
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          <div className="card" style={{ padding: 28 }}>
+            <div style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15,
+                  letterSpacing: "-.02em",
+                  marginBottom: 4,
+                }}
+              >
+                Cumulative Exposure Over Time
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: 11,
+                  color: "var(--dim)",
+                }}
+              >
+                {years}-year period · PM₂.₅-based equivalent cigarettes
+              </div>
+            </div>
+            <div style={{ height: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="gradTeal" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="#0fdfb0"
+                        stopOpacity={0.25}
+                      />
+                      <stop offset="95%" stopColor="#0fdfb0" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="year"
+                    stroke="var(--dim)"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    fontFamily="var(--mono)"
+                  />
+                  <YAxis
+                    stroke="var(--dim)"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    fontFamily="var(--mono)"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                    }}
+                    itemStyle={{ color: "#0fdfb0" }}
+                    labelStyle={{ color: "var(--muted)" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="cigs"
+                    stroke="#0fdfb0"
+                    strokeWidth={1.5}
+                    fillOpacity={1}
+                    fill="url(#gradTeal)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
+
+        {/* ── HEALTH TIMELINE ──────────────────────────────── */}
+        {result && result.timeline.length > 0 && (
+          <section
+            style={{ padding: "0 24px 72px", maxWidth: 1040, margin: "0 auto" }}
+          >
+            <div className="section-label">
+              <div className="section-label-bar" />
+              <span className="section-label-txt">
+                Based on {years}-year exposure
+              </span>
+              <div className="section-label-line" />
+            </div>
+            <h2 className="section-h" style={{ marginBottom: 32 }}>
+              Health Timeline
+            </h2>
+            <div
+              className="timeline-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2,1fr)",
+                gap: 12,
+              }}
+            >
+              {result.timeline.map((item, i) => (
+                <div
+                  key={i}
+                  className="card"
+                  style={{
+                    padding: "20px 22px",
+                    borderLeft: `2px solid ${item.color}`,
+                    borderRadius: "0 10px 10px 0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      color: item.color,
+                      letterSpacing: ".1em",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Year {item.year}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--white)",
+                      lineHeight: 1.65,
+                    }}
+                  >
+                    {item.event.EN}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── CHEMICALS ────────────────────────────────────── */}
+        <section
+          id="chemicals"
+          style={{ padding: "0 24px 72px", maxWidth: 1040, margin: "0 auto" }}
+        >
+          <div className="section-label">
+            <div className="section-label-bar" />
+            <span className="section-label-txt">Toxicology</span>
+            <div className="section-label-line" />
+          </div>
+          <h2 className="section-h">The Chemical Payload</h2>
+          <p className="section-sub" style={{ marginBottom: 32 }}>
+            Found in sidestream smoke at higher concentrations than mainstream
+            smoke.
+          </p>
+
+          <div className="card" style={{ overflow: "hidden" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Chemical</th>
+                  <th>Industrial Use</th>
+                  <th style={{ textAlign: "center" }}>Toxicity</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(CHEMICALS).map(([name, data], i) => (
+                  <tr key={name}>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background:
+                              TOXICITY_COLORS[
+                                data.level as keyof typeof TOXICITY_COLORS
+                              ],
+                            flexShrink: 0,
+                            ...(name === "Polonium-210"
+                              ? { animation: "radioactive 1.2s infinite" }
+                              : {}),
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 14,
+                            color: "var(--white)",
+                          }}
+                        >
+                          {name}
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: 11,
+                        color: "var(--muted)",
+                      }}
+                    >
+                      {data.use.EN}
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 11px",
+                          borderRadius: 4,
+                          fontFamily: "var(--mono)",
+                          fontSize: 10,
+                          fontWeight: 500,
+                          letterSpacing: ".06em",
+                          background: `${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}18`,
+                          color:
+                            TOXICITY_COLORS[
+                              data.level as keyof typeof TOXICITY_COLORS
+                            ],
+                          border: `1px solid ${TOXICITY_COLORS[data.level as keyof typeof TOXICITY_COLORS]}35`,
+                        }}
+                      >
+                        {data.toxicity.EN}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <button
+                        onClick={() => {
+                          setSelectedChem(name);
+                          setModalOpen(true);
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid var(--border)",
+                          borderRadius: 6,
+                          padding: "5px 13px",
+                          color: "var(--muted)",
+                          fontSize: 12,
+                          cursor: "pointer",
+                          fontFamily: "var(--mono)",
+                          fontWeight: 400,
+                          transition: "border-color .15s, color .15s",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = "var(--teal)";
+                          e.currentTarget.style.color = "var(--teal)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = "var(--border)";
+                          e.currentTarget.style.color = "var(--muted)";
+                        }}
+                      >
+                        details →
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ── FAQ ──────────────────────────────────────────── */}
+        <section
+          style={{ padding: "0 24px 72px", maxWidth: 1040, margin: "0 auto" }}
+        >
+          <div className="section-label">
+            <div className="section-label-bar" />
+            <span className="section-label-txt">Common Questions</span>
+            <div className="section-label-line" />
+          </div>
+          <h2 className="section-h" style={{ marginBottom: 32 }}>
+            FAQ
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 1,
+              background: "var(--border)",
+              borderRadius: 10,
+              overflow: "hidden",
+              border: "1px solid var(--border)",
+            }}
+          >
+            {[
+              {
+                q: "Is secondhand smoke really dangerous?",
+                a: "Yes. There is no safe level. It contains thousands of chemicals, many toxic or carcinogenic. Even minutes of exposure can measurably affect blood vessels and lung function.",
+              },
+              {
+                q: "Can air purifiers eliminate the risk?",
+                a: "Purifiers reduce some particles but can't remove all gases and toxins. Only a fully smoke-free environment provides complete protection.",
+              },
+              {
+                q: "What is thirdhand smoke?",
+                a: "Residue clinging to surfaces, clothes, and furniture long after smoking stops. Can be inhaled, ingested, or absorbed through skin — especially dangerous for infants.",
+              },
+              {
+                q: "How accurate is this calculator?",
+                a: "It uses peer-reviewed models (EPA CONTAM, Repace & Lowrey 1980, WHO 2010, Surgeon General 2006). It's a population-level estimate, not a clinical measurement. Consult a doctor for personal assessment.",
+              },
+            ].map(({ q, a }, i) => (
+              <div
+                key={i}
+                className="faq-row"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 0,
+                  background: "var(--card)",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "24px 28px",
+                    borderRight: "1px solid var(--border)",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: "-.02em",
+                    lineHeight: 1.35,
+                    color: "var(--white)",
+                  }}
+                >
+                  {q}
+                </div>
+                <div
+                  style={{
+                    padding: "24px 28px",
+                    fontSize: 13,
+                    color: "var(--muted)",
+                    lineHeight: 1.75,
+                  }}
+                >
+                  {a}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── ACTION + METHODOLOGY ─────────────────────────── */}
+        <section
+          style={{ padding: "0 24px 72px", maxWidth: 1040, margin: "0 auto" }}
+        >
+          <div
+            className="action-grid"
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+          >
+            <div className="card" style={{ padding: 28 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15,
+                  letterSpacing: "-.02em",
+                  marginBottom: 20,
+                }}
+              >
+                Take Action
+              </div>
+              {[
+                {
+                  href: "https://smokefree.gov/",
+                  label: "Smokefree.gov — Free quit resources",
+                },
+                {
+                  href: "https://www.lung.org/quit-smoking",
+                  label: "American Lung Association",
+                },
+                {
+                  href: "https://www.tobaccofreekids.org/",
+                  label: "Campaign for Tobacco-Free Kids",
+                },
+              ].map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 0",
+                    borderBottom: "1px solid var(--border)",
+                    color: "var(--muted)",
+                    textDecoration: "none",
+                    fontSize: 13,
+                    transition: "color .15s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.color = "var(--teal)")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.color = "var(--muted)")
+                  }
+                >
+                  <span
+                    style={{
+                      color: "var(--teal)",
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                    }}
+                  >
+                    →
+                  </span>
+                  {label}
+                </a>
+              ))}
+            </div>
+            <div className="card" style={{ padding: 28 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15,
+                  letterSpacing: "-.02em",
+                  marginBottom: 16,
+                }}
+              >
+                Scientific Methodology
+              </div>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--muted)",
+                  lineHeight: 1.7,
+                  marginBottom: 20,
+                }}
+              >
+                The engine combines the Repace & Lowrey 1980 mass-balance model,
+                EPA CONTAM, and WHO 2010 guidelines. 8 pollutants modelled
+                individually with person-specific breathing rates.
+              </p>
+              {[
+                { code: "SRC 01", text: "U.S. Surgeon General Report, 2006" },
+                {
+                  code: "SRC 02",
+                  text: "IARC Monograph Vol. 83: Tobacco Smoke",
+                },
+                {
+                  code: "SRC 03",
+                  text: "Repace & Lowrey 1980 — Indoor SHS Model",
+                },
+                {
+                  code: "SRC 04",
+                  text: "WHO Indoor Air Quality Guidelines, 2010",
+                },
+              ].map(({ code, text }) => (
+                <div
+                  key={code}
+                  style={{
+                    background: "rgba(255,255,255,.02)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    padding: "10px 14px",
+                    marginBottom: 8,
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ color: "var(--teal)", marginRight: 10 }}>
+                    [{code}]
+                  </span>
+                  <span style={{ color: "var(--dim)" }}>{text}</span>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── ACTION + METHODOLOGY ── */}
-        <section style={{ padding: "0 24px 100px" }}>
-          <div className="container">
-            <div
-              className="grid-2"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 24,
-              }}
-            >
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg,rgba(255,92,26,.15) 0%,rgba(255,92,26,.04) 100%)",
-                  border: "1px solid rgba(255,92,26,.25)",
-                  borderRadius: 24,
-                  padding: 36,
-                }}
-              >
-                <h3
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    letterSpacing: "-.02em",
-                    marginBottom: 20,
-                    color: "var(--color)",
-                  }}
-                >
-                  {isHU ? "Tegyél lépéseket" : "Take Action"}
-                </h3>
-                {[
-                  {
-                    href: "https://smokefree.gov/",
-                    label: isHU
-                      ? "Smokefree.gov — Ingyenes eszközök"
-                      : "Smokefree.gov — Free quit resources",
-                  },
-                  {
-                    href: "https://www.lung.org/quit-smoking",
-                    label: "American Lung Association",
-                  },
-                  {
-                    href: "https://www.tobaccofreekids.org/",
-                    label: "Campaign for Tobacco-Free Kids",
-                  },
-                ].map(({ href, label }) => (
-                  <a
-                    key={href}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "12px 0",
-                      borderBottom: "var(--border) 1px solid",
-                      color: "var(--color)",
-                      textDecoration: "none",
-                      fontSize: 14,
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.color = "var(--orange)")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.color = "var(--color)")
-                    }
-                  >
-                    <span style={{ color: "var(--orange)" }}>→</span> {label}
-                  </a>
-                ))}
-              </div>
-              <div className="glass" style={{ padding: 36 }}>
-                <h3
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    letterSpacing: "-.02em",
-                    marginBottom: 16,
-                    color: "var(--color)",
-                  }}
-                >
-                  {isHU ? "Tudományos Módszertan" : "Scientific Methodology"}
-                </h3>
-                <p
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 13,
-                    lineHeight: 1.7,
-                    marginBottom: 20,
-                  }}
-                >
-                  {isHU
-                    ? "A motor a Repace & Lowrey 1980 tömegmérleg-modellt, az EPA CONTAM-ot és a WHO 2010 irányelveit kombinálja. 8 szennyezőanyagot modellezünk egyenként, személyre szabott expozícióval."
-                    : "The engine combines the Repace & Lowrey 1980 mass-balance model, EPA CONTAM, and WHO 2010 guidelines. 8 pollutants modelled individually with person-specific breathing rates and condition multipliers."}
-                </p>
-                {[
-                  {
-                    code: "[SRC 01]",
-                    text: "U.S. Surgeon General Report, 2006",
-                  },
-                  {
-                    code: "[SRC 02]",
-                    text: "IARC Monograph Vol. 83: Tobacco Smoke",
-                  },
-                  {
-                    code: "[SRC 03]",
-                    text: "Repace & Lowrey 1980 — Indoor SHS Model",
-                  },
-                  {
-                    code: "[SRC 04]",
-                    text: "WHO Indoor Air Quality Guidelines, 2010",
-                  },
-                ].map(({ code, text }) => (
-                  <div
-                    key={code}
-                    style={{
-                      background: "var(--black)",
-                      borderRadius: 10,
-                      padding: "12px 16px",
-                      marginBottom: 8,
-                      fontFamily: "var(--mono)",
-                      fontSize: 11,
-                      color: "var(--color)",
-                    }}
-                  >
-                    <span style={{ color: "var(--orange)", marginRight: 8 }}>
-                      {code}
-                    </span>
-                    <span style={{ color: "var(--muted)" }}>{text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FOOTER ── */}
+        {/* ── FOOTER ───────────────────────────────────────── */}
         <footer
           style={{
             borderTop: "1px solid var(--border)",
-            padding: "48px 24px",
-            textAlign: "center",
+            padding: "40px 32px",
+            maxWidth: 1040,
+            margin: "0 auto",
           }}
         >
-          <div className="container">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 20,
+            }}
+          >
+            <div>
               <div
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: "linear-gradient(135deg,var(--orange),#ff9f50)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
+                  fontWeight: 800,
+                  fontSize: 16,
+                  letterSpacing: "-.03em",
+                  marginBottom: 8,
                 }}
               >
-                💨
+                invisible<b style={{ color: "var(--teal)" }}>inhale</b>
               </div>
-              <span style={{ fontWeight: 800, fontSize: 15 }}>
-                <span style={{ color: "var(--color)" }}>invisible</span>
-                <span style={{ color: "var(--orange)" }}>inhale</span>
-              </span>
+              <p
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: 11,
+                  color: "var(--dim)",
+                  lineHeight: 1.7,
+                  maxWidth: 440,
+                }}
+              >
+                Educational platform. Not a substitute for medical advice.
+                <br />
+                All calculations run locally in your browser — no data collected
+                or transmitted.
+              </p>
             </div>
-            <p
+            <div
               style={{
-                color: "var(--muted)",
-                fontSize: 12,
                 fontFamily: "var(--mono)",
-                maxWidth: 500,
-                margin: "0 auto 16px",
-                lineHeight: 1.7,
+                fontSize: 10,
+                color: "var(--dim)",
+                textAlign: "right",
+                lineHeight: 1.8,
               }}
             >
-              {isHU
-                ? "Ez az eszköz oktatási célokat szolgál. Személyre szabott egészségügyi tanácsért fordulj orvoshoz."
-                : "This tool is for educational purposes. Consult a medical professional for personalized health assessment."}
-            </p>
-            <p
-              className="footer-copyright"
-              style={{
-                color: "rgba(255,255,255,.15)",
-                fontSize: 11,
-                fontFamily: "var(--mono)",
-              }}
-            >
-              © {new Date().getFullYear()} Invisible Inhale — Educational
-              Platform
-            </p>
+              © {new Date().getFullYear()} Invisible Inhale
+              <br />
+              Science-backed · Privacy-first
+            </div>
           </div>
         </footer>
 
-        {/* ── CHEMICAL MODAL ── */}
+        {/* ── CHEMICAL MODAL ───────────────────────────────── */}
         {modalOpen &&
           selectedChem &&
           (() => {
             if (!Object.keys(CHEMICALS).includes(selectedChem)) return null;
-            const chemKey = selectedChem as ChemicalName;
-            const chemData = CHEMICALS[chemKey];
-            const color = TOXICITY_COLORS[chemData.level];
+            const key = selectedChem as ChemicalName;
+            const d = CHEMICALS[key];
+            const col = TOXICITY_COLORS[d.level];
             return (
               <div
                 className="modal-overlay"
@@ -2510,20 +2157,19 @@ export default function SmokeTracker() {
               >
                 <div className="modal-box">
                   <button
-                    className="modal-close-btn"
                     onClick={() => setModalOpen(false)}
                     style={{
                       position: "absolute",
-                      top: 16,
-                      right: 16,
-                      background: "rgba(255,255,255,.07)",
-                      border: "none",
-                      borderRadius: 8,
-                      width: 32,
-                      height: 32,
+                      top: 14,
+                      right: 14,
+                      background: "rgba(255,255,255,.05)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 6,
+                      width: 30,
+                      height: 30,
                       cursor: "pointer",
-                      color: "var(--color)",
-                      fontSize: 18,
+                      color: "var(--muted)",
+                      fontSize: 16,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2535,114 +2181,105 @@ export default function SmokeTracker() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 12,
-                      marginBottom: 24,
+                      gap: 10,
+                      marginBottom: 20,
                     }}
                   >
                     <div
                       style={{
-                        width: 12,
-                        height: 12,
+                        width: 10,
+                        height: 10,
                         borderRadius: "50%",
-                        background: color,
-                        ...(chemKey === "Polonium-210"
-                          ? { animation: "radioactive 1s infinite" }
+                        background: col,
+                        ...(key === "Polonium-210"
+                          ? { animation: "radioactive 1.2s infinite" }
                           : {}),
                       }}
                     />
                     <h2
                       style={{
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: 800,
-                        letterSpacing: "-.02em",
-                        color: "var(--color)",
+                        letterSpacing: "-.03em",
                       }}
                     >
-                      {chemKey}
+                      {key}
                     </h2>
                     <span
                       style={{
-                        padding: "3px 10px",
-                        borderRadius: 100,
-                        fontSize: 10,
+                        padding: "2px 9px",
+                        borderRadius: 4,
                         fontFamily: "var(--mono)",
-                        fontWeight: 700,
-                        background: `${color}20`,
-                        color,
-                        border: `1px solid ${color}40`,
+                        fontSize: 9,
+                        fontWeight: 500,
+                        background: `${col}18`,
+                        color: col,
+                        border: `1px solid ${col}35`,
                       }}
                     >
-                      {isHU ? chemData.toxicity.HU : chemData.toxicity.EN}
+                      {d.toxicity.EN}
                     </span>
                   </div>
                   {[
-                    {
-                      icon: "🫁",
-                      label: isHU ? "Egészségügyi hatások" : "Health Effects",
-                      val: chemData.healthEffects,
-                    },
-                    {
-                      icon: "🛡️",
-                      label: isHU ? "Megelőzés" : "Prevention",
-                      val: chemData.prevention,
-                    },
-                  ].map(({ icon, label, val }) => (
-                    <div key={label} style={{ marginBottom: 20 }}>
+                    { label: "Health Effects", val: d.healthEffects.EN },
+                    { label: "Prevention", val: d.prevention.EN },
+                  ].map(({ label, val }) => (
+                    <div key={label} style={{ marginBottom: 18 }}>
                       <div
                         style={{
                           fontFamily: "var(--mono)",
-                          fontSize: 10,
-                          color: "var(--muted)",
-                          letterSpacing: ".1em",
+                          fontSize: 9,
+                          color: "var(--dim)",
+                          letterSpacing: ".14em",
                           textTransform: "uppercase",
-                          marginBottom: 8,
+                          marginBottom: 7,
                         }}
                       >
-                        {icon} {label}
+                        {label}
                       </div>
                       <div
                         style={{
-                          fontSize: 14,
-                          color: "var(--color)",
+                          fontSize: 13,
+                          color: "var(--white)",
                           lineHeight: 1.7,
                         }}
                       >
-                        {isHU ? val.HU : val.EN}
+                        {val}
                       </div>
                     </div>
                   ))}
                   <a
-                    href={chemData.sourceUrl}
+                    href={d.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 8,
-                      padding: "10px 18px",
-                      borderRadius: 10,
-                      background: "rgba(255,255,255,.06)",
+                      gap: 7,
+                      padding: "9px 16px",
+                      borderRadius: 7,
+                      background: "rgba(255,255,255,.04)",
                       border: "1px solid var(--border)",
-                      color: "var(--orange)",
+                      color: "var(--teal)",
                       textDecoration: "none",
                       fontFamily: "var(--mono)",
-                      fontSize: 12,
+                      fontSize: 11,
                     }}
                   >
-                    → {isHU ? chemData.source.HU : chemData.source.EN}
+                    → {d.source.EN}
                   </a>
                 </div>
               </div>
             );
           })()}
 
-        {/* ── SHARE MODAL ── */}
+        {/* ── SHARE MODAL ──────────────────────────────────── */}
         {shareOpen && result && (
           <ShareModal
             result={result}
             years={years}
             cigsPerDay={cigsPerDay}
-            isHU={isHU}
+            isHU={false}
             onClose={() => setShareOpen(false)}
           />
         )}
