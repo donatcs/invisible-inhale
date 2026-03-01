@@ -31,11 +31,11 @@ const FontLink = () => (
       --black: #06060a; --surface: #0e0e14;
       --card: rgba(255,255,255,0.035); --border: rgba(255,255,255,0.08);
       --orange: #ff5c1a; --amber: #ffb347;
-      --white: #f5f3ee; --muted: rgba(245,243,238,0.45);
+      --white: #f5f3ee; --color: #f5f3ee; --muted: rgba(245,243,238,0.45);
       --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif; --serif: 'Instrument Serif', serif;
     }
     html { scroll-behavior: smooth; }
-    body { background: var(--black); color: var(--white); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    body { background: var(--black); color: var(--color); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
 
     @keyframes fadeUp    { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
     @keyframes gridPulse { 0%,100%{opacity:.4;} 50%{opacity:.7;} }
@@ -54,7 +54,7 @@ const FontLink = () => (
     .badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,92,26,.12); border:1px solid rgba(255,92,26,.3); border-radius:100px; padding:6px 14px; font-size:11px; font-weight:600; letter-spacing:.12em; color:var(--orange); text-transform:uppercase; }
     .badge-dot { width:6px; height:6px; border-radius:50%; background:var(--orange); animation:pulseDot 2s infinite; }
 
-    .inp { width:100%; padding:12px 16px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; color:var(--white); font-family:var(--mono); font-size:14px; outline:none; transition:border-color .2s, background .2s; }
+    .inp { width:100%; padding:12px 16px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; color:var(--color); font-family:var(--mono); font-size:14px; outline:none; transition:border-color .2s, background .2s; }
     .inp:focus { border-color:var(--orange); background:rgba(255,92,26,.06); }
     .inp-label { display:block; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
 
@@ -83,8 +83,8 @@ const FontLink = () => (
     .share-btn:hover { background:rgba(255,92,26,.2); transform:translateY(-2px); }
 
     /* Light mode */
-    .light-mode { --black:#f5f0eb; --surface:#ede8e0; --card:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.1); --white:#1a1612; --muted:rgba(26,22,18,0.5); }
-    .light-mode body { background:#f5f0eb; color:#1a1612; }
+    .light-mode { --black:#f5f0eb; --surface:#ede8e0; --card:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.1); --white:#1a1612; --color:#1a1612; --muted:rgba(26,22,18,0.5); }
+    .light-mode body { background:#f5f0eb; color:var(--color); }
     .light-mode .glass { background:rgba(255,255,255,0.75)!important; border-color:rgba(0,0,0,0.08)!important; }
     .light-mode .stat-card { background:rgba(255,255,255,0.75)!important; border-color:rgba(0,0,0,0.08)!important; }
     .light-mode .modal-box { background:#fff!important; }
@@ -95,7 +95,7 @@ const FontLink = () => (
     .light-mode .chem-table-header { background:rgba(0,0,0,.03)!important; }
     .light-mode .chem-row:hover { background:rgba(0,0,0,.02)!important; }
     .light-mode .footer-copyright { color:rgba(26,22,18,.3)!important; }
-    .light-mode .modal-close-btn { background:rgba(0,0,0,.05)!important; color:#1a1612!important; }
+    .light-mode .modal-close-btn { background:rgba(0,0,0,.05)!important; color:var(--color)!important; }
     .light-mode input[type=range] { background:rgba(0,0,0,.12)!important; }
     .light-mode .nav-link:hover { background:rgba(0,0,0,.05); }
     .light-mode .mobile-menu { background:rgba(245,240,235,.97); }
@@ -103,8 +103,8 @@ const FontLink = () => (
 
     /* Nav */
     .nav-link { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--muted); text-decoration:none; background:transparent; border:none; cursor:pointer; font-family:var(--sans); letter-spacing:-.01em; transition:color .2s, background .2s; white-space:nowrap; }
-    .nav-link:hover { color:var(--white); background:rgba(255,255,255,.06); }
-    .nav-link.cta-link { background:var(--orange); color:#fff!important; padding:6px 16px; border-radius:100px; }
+    .nav-link:hover { color:var(--color); background:rgba(255,255,255,.06); }
+    .nav-link.cta-link { background:var(--orange); color:var(--color)!important; padding:6px 16px; border-radius:100px; }
     .nav-link.cta-link:hover { background:#ff7a40; box-shadow:0 0 20px rgba(255,92,26,.3); }
     .nav-divider { width:1px; height:18px; background:var(--border); flex-shrink:0; }
     .hamburger { display:none; flex-direction:column; gap:5px; width:36px; height:36px; align-items:center; justify-content:center; background:transparent; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
@@ -135,6 +135,7 @@ const FontLink = () => (
 
 // ─── Nav links config ─────────────────────────────────────────────────────────
 const NAV_LINKS = (isHU: boolean) => [
+  { label: isHU ? "Kvíz" : "Quiz", href: "/quiz" },
   { label: isHU ? "Kalkulátor" : "Calculator", href: "#calculator" },
   { label: isHU ? "Vegyi anyagok" : "Chemicals", href: "#chemicals" },
   { label: isHU ? "Hírek" : "News", href: "/news", soon: true },
@@ -143,7 +144,6 @@ const NAV_LINKS = (isHU: boolean) => [
     href: "/regulations",
     soon: true,
   },
-  { label: isHU ? "Kutatás" : "Research", href: "/research", soon: true },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -307,7 +307,7 @@ export default function SmokeTracker() {
                 }}
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                <span style={{ color: "var(--white)" }}>invisible</span>
+                <span style={{ color: "var(--color)" }}>invisible</span>
                 <span style={{ color: "var(--orange)" }}>inhale</span>
               </span>
             </div>
@@ -330,15 +330,11 @@ export default function SmokeTracker() {
                   {soon && SOON_TAG}
                 </a>
               ))}
-              <div className="nav-divider" style={{ margin: "0 6px" }} />
-              <a href="/quiz" className="nav-link cta-link">
-                {isHU ? "Kvíz →" : "Quiz →"}
-              </a>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button className="theme-btn" onClick={() => setIsDark(!isDark)}>
+              {/*               <button className="theme-btn" onClick={() => setIsDark(!isDark)}>
                 {isDark ? "☀️" : "🌙"}
-              </button>
+              </button> */}
               <div
                 style={{
                   display: "flex",
@@ -348,7 +344,7 @@ export default function SmokeTracker() {
                   padding: 4,
                 }}
               >
-                {["US", "HU"].map((l) => (
+                {/*                 {["US", "HU"].map((l) => (
                   <button
                     key={l}
                     className="locale-btn"
@@ -356,13 +352,13 @@ export default function SmokeTracker() {
                     style={{
                       background:
                         locale === l ? "var(--orange)" : "transparent",
-                      color: locale === l ? "#fff" : "var(--muted)",
+                      color: locale === l ? "var(--color)" : "var(--muted)",
                       border: "none",
                     }}
                   >
                     {l === "US" ? "🇺🇸 EN" : "🇭🇺 HU"}
                   </button>
-                ))}
+                ))} */}
               </div>
               <button
                 className="hamburger"
@@ -514,7 +510,7 @@ export default function SmokeTracker() {
                 lineHeight: 1.0,
                 letterSpacing: "-.04em",
                 marginBottom: 0,
-                color: "var(--white)",
+                color: "var(--color)",
               }}
             >
               <span style={{ display: "block", overflow: "hidden" }}>
@@ -589,7 +585,7 @@ export default function SmokeTracker() {
                       i === 3
                         ? "clamp(14px,2vw,16px)"
                         : "clamp(15px,2.5vw,18px)",
-                    color: i === 3 ? "var(--muted)" : "var(--white)",
+                    color: i === 3 ? "var(--muted)" : "var(--color)",
                     lineHeight: 1.7,
                     marginBottom: i < 2 ? 2 : i === 2 ? 20 : 0,
                     fontWeight: i < 3 ? 600 : 400,
@@ -619,7 +615,7 @@ export default function SmokeTracker() {
                   padding: "16px 32px",
                   borderRadius: 100,
                   background: "var(--orange)",
-                  color: "#fff",
+                  color: "var(--color)",
                   fontWeight: 700,
                   fontSize: 15,
                   textDecoration: "none",
@@ -629,25 +625,34 @@ export default function SmokeTracker() {
               >
                 {isHU ? "Számold ki a kitettséged" : "Calculate My Exposure"} →
               </a>
-              <a
-                href="#chemicals"
+              <div
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
+                  display: "flex",
                   gap: 10,
-                  padding: "16px 32px",
-                  borderRadius: 100,
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                  color: "var(--white)",
-                  fontWeight: 600,
-                  fontSize: 15,
-                  textDecoration: "none",
-                  letterSpacing: "-.01em",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
                 }}
               >
-                {isHU ? "Vegyi anyagok" : "See Chemicals"}
-              </a>
+                <a
+                  href="#chemicals"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "16px 32px",
+                    borderRadius: 100,
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    color: "var(--color)",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    textDecoration: "none",
+                    letterSpacing: "-.01em",
+                  }}
+                >
+                  {isHU ? "Vegyi anyagok" : "See Chemicals"}
+                </a>
+              </div>
             </div>
             <div
               className="stats-strip fade-up delay-8"
@@ -733,6 +738,7 @@ export default function SmokeTracker() {
                   letterSpacing: "-.03em",
                   lineHeight: 1.1,
                   marginBottom: 16,
+                  color: "var(--color)",
                 }}
               >
                 {isHU ? "Kockázat Kalkulátor" : "Risk Calculator"}
@@ -1187,6 +1193,7 @@ export default function SmokeTracker() {
                         fontSize: 15,
                         letterSpacing: "-.01em",
                         marginBottom: 4,
+                        color: "var(--color)",
                       }}
                     >
                       {isHU
@@ -1260,6 +1267,7 @@ export default function SmokeTracker() {
                             fontSize: "clamp(28px,4vw,42px)",
                             fontWeight: 800,
                             letterSpacing: "-.03em",
+                            color: bioColor,
                           }}
                         >
                           {result.biomarker.serumNgMl.toFixed(3)}
@@ -1323,7 +1331,14 @@ export default function SmokeTracker() {
                       <div style={{ color: "#ef4444" }}>
                         {">10"} — {isHU ? "Magas" : "High"}
                       </div>
-                      <div style={{ opacity: 0.5, fontSize: 10, marginTop: 4 }}>
+                      <div
+                        style={{
+                          opacity: 0.5,
+                          fontSize: 10,
+                          marginTop: 4,
+                          color: "var(--white)",
+                        }}
+                      >
                         CDC NHANES
                       </div>
                     </div>
@@ -1346,6 +1361,7 @@ export default function SmokeTracker() {
                         fontSize: 16,
                         fontWeight: 700,
                         letterSpacing: "-.02em",
+                        color: "var(--color)",
                       }}
                     >
                       ⚗️{" "}
@@ -1417,6 +1433,7 @@ export default function SmokeTracker() {
                               padding: "14px 16px",
                               fontWeight: 700,
                               fontSize: 13,
+                              color: p.color,
                             }}
                           >
                             <div
@@ -1455,6 +1472,8 @@ export default function SmokeTracker() {
                               fontFamily: "var(--mono)",
                               fontSize: 12,
                               textAlign: "center",
+                              color:
+                                p.doseUg > 0 ? "var(--color)" : "var(--muted)",
                             }}
                           >
                             {p.doseUg < 0.01
@@ -1552,6 +1571,7 @@ export default function SmokeTracker() {
                       fontWeight: 700,
                       letterSpacing: "-.02em",
                       marginBottom: 20,
+                      color: "var(--color)",
                     }}
                   >
                     🫀{" "}
@@ -1568,6 +1588,8 @@ export default function SmokeTracker() {
                           alignItems: "center",
                           gap: 16,
                           flexWrap: "wrap",
+                          color:
+                            r.rrIncrease > 1.5 ? "#ef4444" : "var(--color)",
                         }}
                       >
                         <div style={{ flex: "0 0 200px" }}>
@@ -1632,7 +1654,7 @@ export default function SmokeTracker() {
                               style={{
                                 fontFamily: "var(--mono)",
                                 fontSize: 10,
-                                color: "#ef4444",
+                                color: "var(--color)",
                               }}
                             >
                               +{r.absolutePct.toFixed(2)}%
@@ -1643,7 +1665,7 @@ export default function SmokeTracker() {
                               width: "100%",
                               height: 6,
                               borderRadius: 3,
-                              background: "rgba(255,255,255,.08)",
+                              background: "var(--border)",
                               overflow: "hidden",
                               position: "relative",
                             }}
@@ -1655,7 +1677,7 @@ export default function SmokeTracker() {
                                 top: 0,
                                 height: "100%",
                                 width: `${Math.min(100, (r.baselineRisk / 20) * 100)}%`,
-                                background: "rgba(255,255,255,.2)",
+                                background: "var(--muted)",
                                 borderRadius: 3,
                               }}
                             />
@@ -1868,6 +1890,7 @@ export default function SmokeTracker() {
                     fontWeight: 700,
                     letterSpacing: "-.02em",
                     marginBottom: 6,
+                    color: "var(--color)",
                   }}
                 >
                   {isHU
@@ -1911,14 +1934,14 @@ export default function SmokeTracker() {
                     </defs>
                     <XAxis
                       dataKey="year"
-                      stroke="rgba(255,255,255,.15)"
+                      stroke="var(--muted)"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       fontFamily="var(--mono)"
                     />
                     <YAxis
-                      stroke="rgba(255,255,255,.15)"
+                      stroke="var(--muted)"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
@@ -1926,8 +1949,8 @@ export default function SmokeTracker() {
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#111118",
-                        border: "1px solid rgba(255,92,26,.3)",
+                        background: "var(--background)",
+                        border: "1px solid var(--border)",
                         borderRadius: 12,
                         fontFamily: "var(--mono)",
                         fontSize: 12,
@@ -1960,6 +1983,7 @@ export default function SmokeTracker() {
                     fontSize: "clamp(22px,3vw,36px)",
                     fontWeight: 800,
                     letterSpacing: "-.02em",
+                    color: "var(--color)",
                   }}
                 >
                   🗓 {isHU ? "Egészségügyi Idővonal" : "Health Timeline"}
@@ -2009,7 +2033,7 @@ export default function SmokeTracker() {
                     <div
                       style={{
                         fontSize: 13,
-                        color: "var(--white)",
+                        color: "var(--color)",
                         lineHeight: 1.6,
                       }}
                     >
@@ -2034,6 +2058,7 @@ export default function SmokeTracker() {
                   fontSize: "clamp(28px,4vw,48px)",
                   fontWeight: 800,
                   letterSpacing: "-.03em",
+                  color: "var(--color)",
                 }}
               >
                 {isHU ? "A kémiai terhelés" : "The Chemical Payload"}
@@ -2101,6 +2126,7 @@ export default function SmokeTracker() {
                           padding: "20px",
                           fontWeight: 700,
                           fontSize: 15,
+                          color: "var(--color)",
                         }}
                       >
                         <div
@@ -2167,7 +2193,7 @@ export default function SmokeTracker() {
                             border: "1px solid var(--border)",
                             borderRadius: 8,
                             padding: "6px 14px",
-                            color: "var(--white)",
+                            color: "var(--color)",
                             fontSize: 12,
                             cursor: "pointer",
                             fontFamily: "var(--mono)",
@@ -2202,11 +2228,12 @@ export default function SmokeTracker() {
                 letterSpacing: "-.03em",
                 marginBottom: 40,
                 textAlign: "center",
+                color: "var(--color)",
               }}
             >
               {isHU ? "Gyakori kérdések" : "FAQ"}
             </h2>
-            <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "grid", gap: 12, color: "var(--color)" }}>
               {(isHU
                 ? [
                     {
@@ -2283,13 +2310,13 @@ export default function SmokeTracker() {
                   padding: 36,
                 }}
               >
-                <div style={{ fontSize: 32, marginBottom: 16 }}>🚭</div>
                 <h3
                   style={{
                     fontSize: 22,
                     fontWeight: 800,
                     letterSpacing: "-.02em",
                     marginBottom: 20,
+                    color: "var(--color)",
                   }}
                 >
                   {isHU ? "Tegyél lépéseket" : "Take Action"}
@@ -2320,8 +2347,8 @@ export default function SmokeTracker() {
                       alignItems: "center",
                       gap: 10,
                       padding: "12px 0",
-                      borderBottom: "1px solid rgba(255,255,255,.06)",
-                      color: "var(--white)",
+                      borderBottom: "var(--border) 1px solid",
+                      color: "var(--color)",
                       textDecoration: "none",
                       fontSize: 14,
                     }}
@@ -2329,7 +2356,7 @@ export default function SmokeTracker() {
                       (e.currentTarget.style.color = "var(--orange)")
                     }
                     onMouseOut={(e) =>
-                      (e.currentTarget.style.color = "var(--white)")
+                      (e.currentTarget.style.color = "var(--color)")
                     }
                   >
                     <span style={{ color: "var(--orange)" }}>→</span> {label}
@@ -2337,13 +2364,13 @@ export default function SmokeTracker() {
                 ))}
               </div>
               <div className="glass" style={{ padding: 36 }}>
-                <div style={{ fontSize: 32, marginBottom: 16 }}>🔬</div>
                 <h3
                   style={{
                     fontSize: 22,
                     fontWeight: 800,
                     letterSpacing: "-.02em",
                     marginBottom: 16,
+                    color: "var(--color)",
                   }}
                 >
                   {isHU ? "Tudományos Módszertan" : "Scientific Methodology"}
@@ -2381,12 +2408,13 @@ export default function SmokeTracker() {
                   <div
                     key={code}
                     style={{
-                      background: "rgba(0,0,0,.4)",
+                      background: "var(--black)",
                       borderRadius: 10,
                       padding: "12px 16px",
                       marginBottom: 8,
                       fontFamily: "var(--mono)",
                       fontSize: 11,
+                      color: "var(--color)",
                     }}
                   >
                     <span style={{ color: "var(--orange)", marginRight: 8 }}>
@@ -2433,7 +2461,7 @@ export default function SmokeTracker() {
                 💨
               </div>
               <span style={{ fontWeight: 800, fontSize: 15 }}>
-                <span style={{ color: "var(--white)" }}>invisible</span>
+                <span style={{ color: "var(--color)" }}>invisible</span>
                 <span style={{ color: "var(--orange)" }}>inhale</span>
               </span>
             </div>
@@ -2494,7 +2522,7 @@ export default function SmokeTracker() {
                       width: 32,
                       height: 32,
                       cursor: "pointer",
-                      color: "var(--white)",
+                      color: "var(--color)",
                       fontSize: 18,
                       display: "flex",
                       alignItems: "center",
@@ -2527,6 +2555,7 @@ export default function SmokeTracker() {
                         fontSize: 24,
                         fontWeight: 800,
                         letterSpacing: "-.02em",
+                        color: "var(--color)",
                       }}
                     >
                       {chemKey}
@@ -2574,7 +2603,7 @@ export default function SmokeTracker() {
                       <div
                         style={{
                           fontSize: 14,
-                          color: "var(--white)",
+                          color: "var(--color)",
                           lineHeight: 1.7,
                         }}
                       >
